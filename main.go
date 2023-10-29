@@ -85,6 +85,8 @@ const advancedUsage = `Advanced options:
 var Version string
 
 func main() {
+
+	fmt.Print(i18n.currentLanguage())
 	if len(os.Args) == 1 {
 		fmt.Print(shortUsage)
 		return

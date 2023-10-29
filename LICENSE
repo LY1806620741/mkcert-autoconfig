@@ -1,27 +1,10 @@
-Copyright (c) 2018 The mkcert Authors. All rights reserved.
+版权所有 (c) 2018 mkcert 作者。 版权所有。
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+以源代码和二进制形式重新分发和使用，有或没有修改，是允许的，前提是满足以下条件
+遇见：
 
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
+    * 源代码的再分发必须保留上述版权请注意，此条件列表和以下免责声明。
+    * 以二进制形式重新分发必须重现上述内容版权声明、此条件列表以及以下免责声明在随同提供的文档和/或其他材料中分配。
+    * 既不是 Google Inc. 的名称，也不是其公司的名称贡献者可用于认可或推广源自以下内容的产品本软件未经事先书面许可。
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+本软件由版权所有者和贡献者提供“按原样”和任何明示或暗示的保证，包括但不包括仅限于适销性和适用性的默示保证否认特定目的。 在任何情况下，版权均不归所有者或贡献者对任何直接、间接、附带、特殊、惩戒性或后果性损害（包括但不包括仅限于采购替代商品或服务； 无法使用，数据或利润； 或业务中断）无论是何种原因造成的责任理论，无论是合同责任、严格责任还是侵权责任（包括疏忽或其他原因）因使用而产生的任何情况即使已被告知可能会造成此类损害，也不得使用本软件。
