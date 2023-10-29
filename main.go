@@ -8,6 +8,7 @@ package main
 import (
 	"crypto"
 	"crypto/x509"
+	"embed"
 	"flag"
 	"fmt"
 	"log"
@@ -24,10 +25,55 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/BurntSushi/toml"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/net/idna"
+	"golang.org/x/text/language"
 )
 
-const shortUsage = `Usage of mkcert:
+// 说明
+var (
+	moreOptions, shortUsage, advancedUsage string
+)
+
+// Version can be set at link time to override debug.BuildInfo.Main.Version,
+// which is "(devel)" when building from within the module. See
+// golang.org/issue/29814 and golang.org/issue/29228.
+var Version string
+
+var localizer *i18n.Localizer
+
+//go:embed active.*.toml
+var LocaleFS embed.FS
+
+func init() {
+
+	bundle := i18n.NewBundle(language.English)
+	// bundle := i18n.NewBundle(language.Chinese)
+	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
+	// bundle.LoadMessageFile("en.toml")
+	// bundle.MustLoadMessageFile("active.zh.toml")
+	bundle.LoadMessageFileFS(LocaleFS, "active.zh.toml")
+	tag, _, _ := language.NewMatcher([]language.Tag{
+		// language.SimplifiedChinese, // zh-Hans
+		// language.AmericanEnglish,   // en-US
+		language.Chinese,
+		language.English,
+	}).Match()
+	localizer = i18n.NewLocalizer(bundle, tag.String())
+	// localizer = i18n.NewLocalizer(bundle, language.Chinese.String())
+
+	moreOptions = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "moreOptions",
+			Other: `For more options, run "mkcert -help".`,
+		},
+	})
+
+	shortUsage = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID: "shortUsage",
+			Other: `Usage of mkcert:
 
 	$ mkcert -install
 	Install the local CA in the system trust store.
@@ -44,55 +90,58 @@ const shortUsage = `Usage of mkcert:
 	$ mkcert -uninstall
 	Uninstall the local CA (but do not delete it).
 
-`
-
-const advancedUsage = `Advanced options:
+`,
+		},
+	})
+	advancedUsage = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:          "advancedUsage",
+			Description: "this is advancedUsage",
+			Other: `Advanced options:
 
 	-cert-file FILE, -key-file FILE, -p12-file FILE
-	    Customize the output paths.
+		Customize the output paths.
 
 	-client
-	    Generate a certificate for client authentication.
+		Generate a certificate for client authentication.
 
 	-ecdsa
-	    Generate a certificate with an ECDSA key.
+		Generate a certificate with an ECDSA key.
 
 	-pkcs12
-	    Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
-	    containing certificate and key for legacy applications.
+		Generate a ".p12" PKCS #12 file, also know as a ".pfx" file,
+		containing certificate and key for legacy applications.
 
 	-csr CSR
-	    Generate a certificate based on the supplied CSR. Conflicts with
-	    all other flags and arguments except -install and -cert-file.
+		Generate a certificate based on the supplied CSR. Conflicts with
+		all other flags and arguments except -install and -cert-file.
 
 	-CAROOT
-	    Print the CA certificate and key storage location.
+		Print the CA certificate and key storage location.
 
 	$CAROOT (environment variable)
-	    Set the CA certificate and key storage location. (This allows
-	    maintaining multiple local CAs in parallel.)
+		Set the CA certificate and key storage location. (This allows
+		maintaining multiple local CAs in parallel.)
 
 	$TRUST_STORES (environment variable)
-	    A comma-separated list of trust stores to install the local
-	    root CA into. Options are: "system", "java" and "nss" (includes
-	    Firefox). Autodetected by default.
+		A comma-separated list of trust stores to install the local
+		root CA into. Options are: "system", "java" and "nss" (includes
+		Firefox). Autodetected by default.
 
-`
-
-// Version can be set at link time to override debug.BuildInfo.Main.Version,
-// which is "(devel)" when building from within the module. See
-// golang.org/issue/29814 and golang.org/issue/29228.
-var Version string
+`,
+		},
+	})
+}
 
 func main() {
 
-	fmt.Print(i18n.currentLanguage())
 	if len(os.Args) == 1 {
 		fmt.Print(shortUsage)
 		return
 	}
 	log.SetFlags(0)
 	var (
+		guideFlag     = flag.Bool("guide", false, "")
 		installFlag   = flag.Bool("install", false, "")
 		uninstallFlag = flag.Bool("uninstall", false, "")
 		pkcs12Flag    = flag.Bool("pkcs12", false, "")
@@ -108,12 +157,16 @@ func main() {
 	)
 	flag.Usage = func() {
 		fmt.Fprint(flag.CommandLine.Output(), shortUsage)
-		fmt.Fprintln(flag.CommandLine.Output(), `For more options, run "mkcert -help".`)
+		fmt.Fprintln(flag.CommandLine.Output(), moreOptions)
 	}
 	flag.Parse()
 	if *helpFlag {
 		fmt.Print(shortUsage)
 		fmt.Print(advancedUsage)
+		return
+	}
+	if *guideFlag {
+		(&prompt{}).Ask()
 		return
 	}
 	if *versionFlag {
