@@ -2,10 +2,6 @@ package main
 
 import (
 	"embed"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -40,12 +36,6 @@ func init() {
 	}).Match()
 	localizer = i18n.NewLocalizer(bundle, tag.String())
 
-	//初始化说明文本
-	exePath, _ := os.Executable()
-	_, execName := filepath.Split(exePath)
-	exeSuffix := path.Ext(execName)
-	execNameWithOutSuffix := strings.TrimSuffix(execName, exeSuffix)
-
 	i18nText.help = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID: "help",
@@ -55,7 +45,7 @@ func init() {
 	use guide
 
 	$ {{.Name}} mkcert
-	use mkcert
+	use mkcert, the same as mkcert's usage.
 
 	`,
 		}, TemplateData: map[string]interface{}{
@@ -130,6 +120,17 @@ func init() {
 		Firefox). Autodetected by default.
 
 `,
+		},
+	})
+}
+
+func (i *I18nText) errUnknownGroupCommand(groupCommand string) string {
+	return localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "errUnknownGroupCommand",
+			Other: `err. Unknown command "{{.Name}}"`,
+		}, TemplateData: map[string]interface{}{
+			"Name": execNameWithOutSuffix + " " + groupCommand,
 		},
 	})
 }

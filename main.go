@@ -32,17 +32,29 @@ import (
 // golang.org/issue/29814 and golang.org/issue/29228.
 var Version string
 
+// 独立开，不干扰原来mkcert的逻辑，明确这个是一个mkcert的向导工具
 func main() {
 	if len(os.Args) == 1 {
 		fmt.Print(i18nText.help)
 		return
 	}
 	log.SetFlags(0)
-	var guideFlag = flag.Bool("guide", false, "")
 	flag.Parse()
-	print(flag.Args())
-	if *guideFlag {
-		print("")
+	//检查是否在命令列表
+	mainCommand := flag.Arg(0)
+
+	switch mainCommand {
+	case "guide":
+		guideRun()
+		break
+	case "mkcert":
+		//删除第二个参数
+		os.Args = append(os.Args[:1], os.Args[2:]...)
+		//运行原mkcert逻辑
+		mkcertMain()
+		break
+	default:
+		log.Fatalln(i18nText.errUnknownGroupCommand(mainCommand))
 	}
 }
 
@@ -77,10 +89,6 @@ func mkcertMain() {
 		fmt.Print(i18nMkcertText.advancedUsage)
 		return
 	}
-	// if *guideFlag {
-	// 	(&prompt{}).Ask()
-	// 	return
-	// }
 	if *versionFlag {
 		if Version != "" {
 			fmt.Println(Version)

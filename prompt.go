@@ -10,40 +10,29 @@ import (
 type prompt struct {
 }
 
-type pepper struct {
-	Name     string
-	HeatUnit int
-	Peppers  int
+type item struct {
+	Name        string
+	Description string
 }
 
-func (p *prompt) Ask() {
-	peppers := []pepper{
-		{Name: "Bell Pepper", HeatUnit: 0, Peppers: 0},
-		{Name: "Banana Pepper", HeatUnit: 100, Peppers: 1},
-		{Name: "Poblano", HeatUnit: 1000, Peppers: 2},
-		{Name: "Jalapeño", HeatUnit: 3500, Peppers: 3},
-		{Name: "Aleppo", HeatUnit: 10000, Peppers: 4},
-		{Name: "Tabasco", HeatUnit: 30000, Peppers: 5},
-		{Name: "Malagueta", HeatUnit: 50000, Peppers: 6},
-		{Name: "Habanero", HeatUnit: 100000, Peppers: 7},
-		{Name: "Red Savina Habanero", HeatUnit: 350000, Peppers: 8},
-		{Name: "Dragon’s Breath", HeatUnit: 855000, Peppers: 9},
+func (p *prompt) GenRootCert() bool {
+	items := []item{
+		{Name: "生成网站根证书", Description: "检查到" + execNameWithOutSuffix + "未生成根证书，根证书是颁发https证书所依赖的,你需要先生成它"},
 	}
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | cyan }} ({{ .HeatUnit | red }})",
-		Inactive: "  {{ .Name | cyan }} ({{ .HeatUnit | red }})",
+		Active:   "\U0001F336 {{ .Name | cyan }}",
+		Inactive: "  {{ .Name | cyan }}",
 		Selected: "\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
---------- Pepper ----------
-{{ "Name:" | faint }}	{{ .Name }}
-{{ "Heat Unit:" | faint }}	{{ .HeatUnit }}
-{{ "Peppers:" | faint }}	{{ .Peppers }}`,
+--------- 详情 ----------
+{{ "名字:" | faint }}	{{ .Name }}
+{{ "解释:" | faint }}	{{ .Description }}`,
 	}
 
 	searcher := func(input string, index int) bool {
-		pepper := peppers[index]
+		pepper := items[index]
 		name := strings.Replace(strings.ToLower(pepper.Name), " ", "", -1)
 		input = strings.Replace(strings.ToLower(input), " ", "", -1)
 
@@ -51,8 +40,8 @@ func (p *prompt) Ask() {
 	}
 
 	prompt := promptui.Select{
-		Label:     "Spicy Level",
-		Items:     peppers,
+		Label:     "你要做什么",
+		Items:     items,
 		Templates: templates,
 		Size:      4,
 		Searcher:  searcher,
@@ -62,8 +51,7 @@ func (p *prompt) Ask() {
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
-		return
+		return false
 	}
-
-	fmt.Printf("You choose number %d: %s\n", i+1, peppers[i].Name)
+	return i == 0
 }
