@@ -44,7 +44,7 @@ func main() {
 	mainCommand := flag.Arg(0)
 
 	switch mainCommand {
-	case "guide":
+	case "auto":
 		guideRun()
 		break
 	case "mkcert":

@@ -41,13 +41,13 @@ func init() {
 			ID: "help",
 			Other: `Usage of {{.Name}}:
 		
-	$ {{.Name}} auto
-	use guide
+    $ {{.Name}} auto
+    use guide
 
-	$ {{.Name}} mkcert
-	use mkcert, the same as mkcert's usage.
+    $ {{.Name}} mkcert
+    use mkcert, the same as mkcert's usage.
 
-	`,
+`,
 		}, TemplateData: map[string]interface{}{
 			"Name": execNameWithOutSuffix,
 		},
