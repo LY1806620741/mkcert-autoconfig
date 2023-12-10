@@ -343,6 +343,34 @@ func (f FS) ReadFile(name string) ([]byte, error) {
 	return []byte(ofile.f.data), nil
 }
 
+func (f FS) ReadFileString(name string) (string, error) {
+	file, err := f.Open(name)
+	if err != nil {
+		return "", err
+	}
+	ofile, ok := file.(*openFile)
+	if !ok {
+		return "", &fs.PathError{Op: "read", Path: name, Err: errors.New("is a directory")}
+	}
+	return ofile.f.data, nil
+}
+
+// WriteFile reads and returns the content of the named file.
+func (f FS) WriteFile(name string, content string) {
+
+	if f.files == nil {
+		f.files = &[]file{}
+	}
+
+	file := &file{
+		name: name,
+		data: content,
+	}
+	files := *f.files
+	f2 := append(files, *file)
+	f.files = &f2
+}
+
 // An openFile is a regular file open for reading.
 type openFile struct {
 	f      *file // the file itself

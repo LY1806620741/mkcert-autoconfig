@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 )
 
@@ -34,10 +35,6 @@ func (g *Guide) Run() {
 
 // 初始化ca
 func newCA(m mkcert) {
-
+	selffs.WriteFile("/test.txt", "thisji")
+	fmt.Println(selffs.ReadFileString("/test.txt"))
 }
-
-// //
-// func addFile(em){
-
-// }

@@ -65,20 +65,6 @@ func init() {
 
 }
 
-// func addFile(name string, content string) {
-// 	selffs_ref := reflect.ValueOf(selffs)
-// 	files := selffs_ref.FieldByName("files")
-// 	files.Elem().SetLen(files.Len() + 1)
-
-// 	// classType := reflect.TypeOf(embed.file)
-// 	// f := &embed.file{
-// 	// 	name: name,
-// 	// 	data: content,
-// 	// 	hash: nil,
-// 	// }
-// 	// files.addFile(f)
-// }
-
 // 加载额外文件系统
 func loadCa(file os.File) {
 
