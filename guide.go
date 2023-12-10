@@ -1,5 +1,6 @@
 package main
-import(
+
+import (
 	"log"
 )
 
@@ -13,12 +14,12 @@ func guideRun() {
 
 func (g *Guide) Run() {
 	//检查是否已经拥有根证书
-	m:=mkcert{}
-	m.CAROOT="./"
+	m := mkcert{}
+	m.CAROOT = "./"
 	newCA(m)
-	if (false){
-		if (g.prompt.GenRootCert()){
-			
+	if false {
+		if g.prompt.GenRootCert() {
+
 			if m.checkPlatform() {
 				log.Print("The local CA is already installed in the system trust store! 👍")
 			} else {
@@ -31,11 +32,12 @@ func (g *Guide) Run() {
 	}
 }
 
-//初始化ca
-func newCA(m mkcert){
+// 初始化ca
+func newCA(m mkcert) {
+
 }
 
 // //
 // func addFile(em){
-	
+
 // }
