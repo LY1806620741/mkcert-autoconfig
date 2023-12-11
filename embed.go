@@ -129,7 +129,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"time"
@@ -149,11 +152,11 @@ type FS struct {
 	// The compiler knows the layout of this struct.
 	// See cmd/compile/internal/staticdata's WriteEmbed.
 	//
-	// The files list is sorted by name but not by simple string comparison.
+	// The Files list is sorted by name but not by simple string comparison.
 	// Instead, each file's name takes the form "dir/elem" or "dir/elem/".
 	// The optional trailing slash indicates that the file is itself a directory.
-	// The files list is sorted first by dir (if dir is missing, it is taken to be ".")
-	// and then by base, so this list of files:
+	// The Files list is sorted first by dir (if dir is missing, it is taken to be ".")
+	// and then by base, so this list of Files:
 	//
 	//	p
 	//	q/
@@ -178,7 +181,11 @@ type FS struct {
 	// This order brings directory contents together in contiguous sections
 	// of the list, allowing a directory read to use binary search to find
 	// the relevant sequence of entries.
-	files *[]file
+	Files *[]File
+}
+
+func (f *FS) GetFiles() *[]File {
+	return f.Files
 }
 
 // split splits the name into dir and elem as described in the
@@ -213,46 +220,46 @@ var (
 	_ fs.ReadFileFS = FS{}
 )
 
-// A file is a single file in the FS.
+// A File is a single File in the FS.
 // It implements fs.FileInfo and fs.DirEntry.
-type file struct {
+type File struct {
 	// The compiler knows the layout of this struct.
 	// See cmd/compile/internal/staticdata's WriteEmbed.
-	name string
-	data string
-	hash [16]byte // truncated SHA256 hash
+	Fname string
+	Data  string
+	Hash  [16]byte // truncated SHA256 hash
 }
 
 var (
-	_ fs.FileInfo = (*file)(nil)
-	_ fs.DirEntry = (*file)(nil)
+	_ fs.FileInfo = (*File)(nil)
+	_ fs.DirEntry = (*File)(nil)
 )
 
-func (f *file) Name() string               { _, elem, _ := split(f.name); return elem }
-func (f *file) Size() int64                { return int64(len(f.data)) }
-func (f *file) ModTime() time.Time         { return time.Time{} }
-func (f *file) IsDir() bool                { _, _, isDir := split(f.name); return isDir }
-func (f *file) Sys() any                   { return nil }
-func (f *file) Type() fs.FileMode          { return f.Mode().Type() }
-func (f *file) Info() (fs.FileInfo, error) { return f, nil }
+func (f *File) Name() string               { _, elem, _ := split(f.Fname); return elem }
+func (f *File) Size() int64                { return int64(len(f.Data)) }
+func (f *File) ModTime() time.Time         { return time.Time{} }
+func (f *File) IsDir() bool                { _, _, isDir := split(f.Fname); return isDir }
+func (f *File) Sys() any                   { return nil }
+func (f *File) Type() fs.FileMode          { return f.Mode().Type() }
+func (f *File) Info() (fs.FileInfo, error) { return f, nil }
 
-func (f *file) Mode() fs.FileMode {
+func (f *File) Mode() fs.FileMode {
 	if f.IsDir() {
 		return fs.ModeDir | 0555
 	}
 	return 0444
 }
 
-func (f *file) String() string {
+func (f *File) String() string {
 	return fs.FormatFileInfo(f)
 }
 
 // dotFile is a file for the root directory,
 // which is omitted from the files list in a FS.
-var dotFile = &file{name: "./"}
+var dotFile = &File{Fname: "./"}
 
 // lookup returns the named file, or nil if it is not present.
-func (f FS) lookup(name string) *file {
+func (f FS) lookup(name string) *File {
 	if !fs.ValidPath(name) {
 		// The compiler should never emit a file with an invalid name,
 		// so this check is not strictly necessary (if name is invalid,
@@ -262,38 +269,38 @@ func (f FS) lookup(name string) *file {
 	if name == "." {
 		return dotFile
 	}
-	if f.files == nil {
+	if f.Files == nil {
 		return nil
 	}
 
 	// Binary search to find where name would be in the list,
 	// and then check if name is at that position.
 	dir, elem, _ := split(name)
-	files := *f.files
+	files := *f.Files
 	i := sortSearch(len(files), func(i int) bool {
-		idir, ielem, _ := split(files[i].name)
+		idir, ielem, _ := split(files[i].Fname)
 		return idir > dir || idir == dir && ielem >= elem
 	})
-	if i < len(files) && trimSlash(files[i].name) == name {
+	if i < len(files) && trimSlash(files[i].Fname) == name {
 		return &files[i]
 	}
 	return nil
 }
 
 // readDir returns the list of files corresponding to the directory dir.
-func (f FS) readDir(dir string) []file {
-	if f.files == nil {
+func (f FS) readDir(dir string) []File {
+	if f.Files == nil {
 		return nil
 	}
 	// Binary search to find where dir starts and ends in the list
 	// and then return that slice of the list.
-	files := *f.files
+	files := *f.Files
 	i := sortSearch(len(files), func(i int) bool {
-		idir, _, _ := split(files[i].name)
+		idir, _, _ := split(files[i].Fname)
 		return idir >= dir
 	})
 	j := sortSearch(len(files), func(j int) bool {
-		jdir, _, _ := split(files[j].name)
+		jdir, _, _ := split(files[j].Fname)
 		return jdir > dir
 	})
 	return files[i:j]
@@ -340,7 +347,7 @@ func (f FS) ReadFile(name string) ([]byte, error) {
 	if !ok {
 		return nil, &fs.PathError{Op: "read", Path: name, Err: errors.New("is a directory")}
 	}
-	return []byte(ofile.f.data), nil
+	return []byte(ofile.f.Data), nil
 }
 
 func (f FS) ReadFileString(name string) (string, error) {
@@ -352,28 +359,48 @@ func (f FS) ReadFileString(name string) (string, error) {
 	if !ok {
 		return "", &fs.PathError{Op: "read", Path: name, Err: errors.New("is a directory")}
 	}
-	return ofile.f.data, nil
+	return ofile.f.Data, nil
 }
 
 // WriteFile reads and returns the content of the named file.
-func (f FS) WriteFile(name string, content string) {
+func (f *FS) WriteFile(name string, content string) {
 
-	if f.files == nil {
-		f.files = &[]file{}
+	if f.Files == nil {
+		f.Files = &[]File{}
 	}
 
-	file := &file{
-		name: name,
-		data: content,
+	file := &File{
+		Fname: name,
+		Data:  content,
 	}
-	files := *f.files
+	files := *f.Files
 	f2 := append(files, *file)
-	f.files = &f2
+	f.Files = &f2
+}
+
+func (f FS) ToGob() (bufres bytes.Buffer) {
+
+	// data, _ := json.Marshal(f)
+	// fmt.Println(data)
+	// var fs FS
+	// _ = json.Unmarshal(data, &fs)
+	// fmt.Println(fs)
+
+	enc := gob.NewEncoder(&bufres)
+
+	err := enc.Encode(selffs)
+
+	if err != nil {
+		fmt.Println("序列化失败", err)
+		return bufres
+	}
+
+	return bufres
 }
 
 // An openFile is a regular file open for reading.
 type openFile struct {
-	f      *file // the file itself
+	f      *File // the file itself
 	offset int64 // current read offset
 }
 
@@ -386,13 +413,13 @@ func (f *openFile) Close() error               { return nil }
 func (f *openFile) Stat() (fs.FileInfo, error) { return f.f, nil }
 
 func (f *openFile) Read(b []byte) (int, error) {
-	if f.offset >= int64(len(f.f.data)) {
+	if f.offset >= int64(len(f.f.Data)) {
 		return 0, io.EOF
 	}
 	if f.offset < 0 {
-		return 0, &fs.PathError{Op: "read", Path: f.f.name, Err: fs.ErrInvalid}
+		return 0, &fs.PathError{Op: "read", Path: f.f.Fname, Err: fs.ErrInvalid}
 	}
-	n := copy(b, f.f.data[f.offset:])
+	n := copy(b, f.f.Data[f.offset:])
 	f.offset += int64(n)
 	return n, nil
 }
@@ -404,20 +431,20 @@ func (f *openFile) Seek(offset int64, whence int) (int64, error) {
 	case 1:
 		offset += f.offset
 	case 2:
-		offset += int64(len(f.f.data))
+		offset += int64(len(f.f.Data))
 	}
-	if offset < 0 || offset > int64(len(f.f.data)) {
-		return 0, &fs.PathError{Op: "seek", Path: f.f.name, Err: fs.ErrInvalid}
+	if offset < 0 || offset > int64(len(f.f.Data)) {
+		return 0, &fs.PathError{Op: "seek", Path: f.f.Fname, Err: fs.ErrInvalid}
 	}
 	f.offset = offset
 	return offset, nil
 }
 
 func (f *openFile) ReadAt(b []byte, offset int64) (int, error) {
-	if offset < 0 || offset > int64(len(f.f.data)) {
-		return 0, &fs.PathError{Op: "read", Path: f.f.name, Err: fs.ErrInvalid}
+	if offset < 0 || offset > int64(len(f.f.Data)) {
+		return 0, &fs.PathError{Op: "read", Path: f.f.Fname, Err: fs.ErrInvalid}
 	}
-	n := copy(b, f.f.data[offset:])
+	n := copy(b, f.f.Data[offset:])
 	if n < len(b) {
 		return n, io.EOF
 	}
@@ -426,8 +453,8 @@ func (f *openFile) ReadAt(b []byte, offset int64) (int, error) {
 
 // An openDir is a directory open for reading.
 type openDir struct {
-	f      *file  // the directory file itself
-	files  []file // the directory contents
+	f      *File  // the directory file itself
+	files  []File // the directory contents
 	offset int    // the read offset, an index into the files slice
 }
 
@@ -435,7 +462,7 @@ func (d *openDir) Close() error               { return nil }
 func (d *openDir) Stat() (fs.FileInfo, error) { return d.f, nil }
 
 func (d *openDir) Read([]byte) (int, error) {
-	return 0, &fs.PathError{Op: "read", Path: d.f.name, Err: errors.New("is a directory")}
+	return 0, &fs.PathError{Op: "read", Path: d.f.Fname, Err: errors.New("is a directory")}
 }
 
 func (d *openDir) ReadDir(count int) ([]fs.DirEntry, error) {

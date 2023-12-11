@@ -91,6 +91,8 @@ func loadCa(file os.File) {
 	if err != nil {
 		fmt.Println("反序列化失败", err)
 	}
+
+	caInit = true
 }
 
 // 分裂
@@ -126,16 +128,7 @@ func division() {
 		return
 	}
 
-	var buf bytes.Buffer
-
-	enc := gob.NewEncoder(&buf)
-
-	err = enc.Encode(selffs)
-
-	if err != nil {
-		fmt.Println("序列化失败", err)
-		return
-	}
+	var buf bytes.Buffer = selffs.ToGob()
 
 	err = binary.Write(destinationFile, binary.LittleEndian, buf.Bytes())
 	if err != nil {
@@ -143,9 +136,7 @@ func division() {
 		return
 	}
 
-	var size int = buf.Len()
-
-	err = binary.Write(destinationFile, binary.LittleEndian, size)
+	err = binary.Write(destinationFile, binary.LittleEndian, IntToBytes(buf.Len()))
 	if err != nil {
 		fmt.Println("无法写入", err)
 		return

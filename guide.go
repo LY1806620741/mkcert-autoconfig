@@ -17,7 +17,13 @@ func (g *Guide) Run() {
 	//检查是否已经拥有根证书
 	m := mkcert{}
 	m.CAROOT = "./"
-	newCA(m)
+	if caInit {
+		text, _ := selffs.ReadFileString("key.pem")
+		fmt.Println(text)
+	} else {
+		newCA(m)
+		division()
+	}
 	if false {
 		if g.prompt.GenRootCert() {
 
@@ -35,6 +41,7 @@ func (g *Guide) Run() {
 
 // 初始化ca
 func newCA(m mkcert) {
-	selffs.WriteFile("/test.txt", "thisji")
-	fmt.Println(selffs.ReadFileString("/test.txt"))
+	selffs.WriteFile("key.pem", "thisji")
+	text, _ := selffs.ReadFileString("key.pem")
+	fmt.Println(text)
 }
