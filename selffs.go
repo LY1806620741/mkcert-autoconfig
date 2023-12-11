@@ -58,7 +58,7 @@ func init() {
 
 	//判断是否有魔术字
 	if bytes.Compare(buffer, magic) == 0 {
-		loadCa(*file)
+		loadFS(*file)
 	} else {
 		// division()
 	}
@@ -66,7 +66,7 @@ func init() {
 }
 
 // 加载额外文件系统
-func loadCa(file os.File) {
+func loadFS(file os.File) {
 
 	// 移动到读取的位置
 	_, _ = file.Seek(-int64(len(magic)+4), io.SeekCurrent)
@@ -95,10 +95,10 @@ func loadCa(file os.File) {
 	caInit = true
 }
 
-// 分裂
+// 分裂,创建携带根证书公私钥的母客户端
 func division() {
 
-	f, _ := selffs.Open("key.pem")
+	f, _ := selffs.Open(rootName)
 
 	if f == nil {
 		return
