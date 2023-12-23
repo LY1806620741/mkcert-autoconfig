@@ -8,12 +8,14 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
+	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
 type Guide struct {
-	prompt *prompt
+	prompt Prompt
 }
 
 func guideRun() {
@@ -26,6 +28,20 @@ func (g *Guide) Run() {
 	m.CAROOT = "./"
 	if caInit {
 		loadCA(&m)
+		// 母客户端菜单
+		rootIndex := g.prompt.RootMenu()
+
+		//生成子证书
+		if rootIndex == 1 {
+			m.makeCert([]string{"localhost", "service.com"})
+		} else if rootIndex == 2 { //导出根证书
+			keyContent, _ := selffs.ReadFile(rootKeyName)
+			os.WriteFile(rootKeyName, keyContent, 0666)
+			pemContent, _ := selffs.ReadFile(rootName)
+			os.WriteFile(rootName, pemContent, 0666)
+		}
+
+		fmt.Print(rootIndex)
 	} else {
 		if g.prompt.GenRootCert() {
 			newCA(m)

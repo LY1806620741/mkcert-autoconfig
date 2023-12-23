@@ -57,7 +57,7 @@ func init() {
 	}
 
 	//判断是否有魔术字
-	if bytes.Compare(buffer, magic) == 0 {
+	if bytes.Equal(buffer, magic) {
 		loadFS(*file)
 	} else {
 		// division()
