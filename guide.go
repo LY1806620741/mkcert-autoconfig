@@ -8,7 +8,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -26,6 +25,7 @@ func (g *Guide) Run() {
 	//检查是否已经拥有根证书
 	m := mkcert{}
 	m.CAROOT = "./"
+
 	if caInit {
 		loadCA(&m)
 		// 母客户端菜单
@@ -33,15 +33,22 @@ func (g *Guide) Run() {
 
 		//生成子证书
 		if rootIndex == 1 {
-			m.makeCert([]string{"localhost", "service.com"})
+			m.makeCert(g.prompt.InputHost())
 		} else if rootIndex == 2 { //导出根证书
 			keyContent, _ := selffs.ReadFile(rootKeyName)
 			os.WriteFile(rootKeyName, keyContent, 0666)
 			pemContent, _ := selffs.ReadFile(rootName)
 			os.WriteFile(rootName, pemContent, 0666)
+			log.Println("已导出到当前目录下")
+		} else if rootIndex == 3 { //导出客户端
+			//生成html或客户端
+			os.Mkdir("dist", os.ModePerm)
+			os.Mkdir("dist/html", os.ModePerm)
+			log.Println("已生成授信客户端，请在你的服务器进行部署")
 		}
 
-		fmt.Print(rootIndex)
+		//退出
+
 	} else {
 		if g.prompt.GenRootCert() {
 			newCA(m)

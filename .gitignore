@@ -1,3 +1,4 @@
 mock*.go
 automkcert-root
 *.pem
+automkcert
