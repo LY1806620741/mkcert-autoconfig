@@ -147,7 +147,7 @@ func newCA(m mkcert) {
 		&pem.Block{Type: "CERTIFICATE", Bytes: cert})))
 	fatalIfErr(err, "failed to save CA certificate")
 
-	log.Printf("Created a new local CA 💥\n")
+	log.Printf("生成了根证书客户端automkcert-root 💥\n")
 }
 
 func loadCA(m *mkcert) {

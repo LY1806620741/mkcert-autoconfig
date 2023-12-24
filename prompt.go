@@ -1,6 +1,6 @@
 package main
 
-//go:generate mockgen -destination mock_prompt_test.go -package main -source prompt.go Prompt
+//go:generate mockgen -destination mock_prompt_test.go -package main_test -source prompt.go Prompt
 
 import (
 	"errors"

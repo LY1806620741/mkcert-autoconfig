@@ -121,7 +121,7 @@ func division() {
 	defer sourceFile.Close()
 
 	// 创建或打开目标文件
-	destinationFile, err := os.OpenFile(execNameWithOutSuffix+"-root", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	destinationFile, err := os.OpenFile(execNameWithOutSuffix+"-root", os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		fmt.Println("无法创建或打开目标文件：", err)
 		return
