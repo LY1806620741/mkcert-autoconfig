@@ -12,7 +12,7 @@ import (
 )
 
 //go:generate sh client/gen.sh
-//go:embed dist/*x64 dist/index.html
+//go:embed dist/*x64* dist/index.html
 var staticFs embed.FS
 
 var selffs FS

@@ -34,15 +34,15 @@ func (g *Guide) Run() {
 		rootIndex := g.prompt.RootMenu()
 
 		//生成子证书
-		if rootIndex == 1 {
+		if rootIndex == 0 {
 			m.makeCert(g.prompt.InputHost())
-		} else if rootIndex == 2 { //导出根证书
+		} else if rootIndex == 1 { //导出根证书
 			keyContent, _ := selffs.ReadFile(rootKeyName)
 			os.WriteFile(rootKeyName, keyContent, 0666)
 			pemContent, _ := selffs.ReadFile(rootName)
 			os.WriteFile(rootName, pemContent, 0666)
 			log.Println("已导出到当前目录下")
-		} else if rootIndex == 3 { //导出客户端
+		} else if rootIndex == 2 { //导出客户端
 			//生成html或客户端
 			//解压客户端
 
@@ -54,7 +54,7 @@ func (g *Guide) Run() {
 
 			for _, file := range files {
 				if !file.IsDir() {
-					b, _ := staticFs.ReadFile(file.Name())
+					b, _ := staticFs.ReadFile("dist/" + file.Name())
 					if strings.Contains(file.Name(), "certClient") {
 						//根证书公钥文件注入
 						var buffer bytes.Buffer
@@ -63,9 +63,9 @@ func (g *Guide) Run() {
 						buffer.Write(b2)
 						buffer.Write(IntToBytes(len(b2)))
 						buffer.Write([]byte("selffs"))
-						os.WriteFile(file.Name(), buffer.Bytes(), os.ModePerm)
+						os.WriteFile("dist/"+file.Name(), buffer.Bytes(), os.ModePerm)
 					} else {
-						os.WriteFile(file.Name(), b, os.ModePerm)
+						os.WriteFile("dist/"+file.Name(), b, os.ModePerm)
 					}
 				}
 			}

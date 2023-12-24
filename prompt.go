@@ -27,7 +27,7 @@ type item struct {
 
 func (p *prompt) GenRootCert() bool {
 	items := []item{
-		{Name: "生成网站根证书", Description: "检查到" + execNameWithOutSuffix + "未生成根证书，根证书是颁发https证书所依赖的,你需要先生成它"},
+		{Name: "生成网站根证书(不覆盖文件)", Description: "检查到" + execNameWithOutSuffix + "未生成根证书，根证书是颁发https证书所依赖的,你需要先生成它"},
 	}
 
 	templates := &promptui.SelectTemplates{
