@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/sha1"
@@ -10,6 +11,7 @@ import (
 	"encoding/pem"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -42,9 +44,36 @@ func (g *Guide) Run() {
 			log.Println("已导出到当前目录下")
 		} else if rootIndex == 3 { //导出客户端
 			//生成html或客户端
+			//解压客户端
+
 			os.Mkdir("dist", os.ModePerm)
-			os.Mkdir("dist/html", os.ModePerm)
-			log.Println("已生成授信客户端，请在你的服务器进行部署")
+			files, err := staticFs.ReadDir("dist")
+			if err != nil {
+				panic(err)
+			}
+
+			for _, file := range files {
+				if !file.IsDir() {
+					b, _ := staticFs.ReadFile(file.Name())
+					if strings.Contains(file.Name(), "certClient") {
+						//根证书公钥文件注入
+						var buffer bytes.Buffer
+						buffer.Write(b)
+						b2, _ := selffs.ReadFile(rootName)
+						buffer.Write(b2)
+						buffer.Write(IntToBytes(len(b2)))
+						buffer.Write([]byte("selffs"))
+						os.WriteFile(file.Name(), buffer.Bytes(), os.ModePerm)
+					} else {
+						os.WriteFile(file.Name(), b, os.ModePerm)
+					}
+				}
+			}
+
+			b2, _ := selffs.ReadFile(rootName)
+			os.WriteFile("dist/"+rootName, b2, os.ModePerm)
+
+			log.Println("已生成授信客户端，在当前dist目录下，请在你的服务器进行部署")
 		}
 
 		//退出

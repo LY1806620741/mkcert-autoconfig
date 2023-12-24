@@ -2,12 +2,18 @@ package main
 
 import (
 	"bytes"
+	"embed"
+	_ "embed"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
 )
+
+//go:generate sh client/gen.sh
+//go:embed dist/*x64 dist/index.html
+var staticFs embed.FS
 
 var selffs FS
 var magic = []byte("selffs")

@@ -66,7 +66,24 @@
 
         }
 
-        document.writeln("您的操作系统是：" + detectOS());
+        function getClientName(os){
+            if (os.startsWith("Win")){
+                return "certClient_windows_x64.exe"
+            }
+            if (os === "Linux"){
+                return "certClient_linux_x64"
+            }
+            if (os == "max"){
+                return "certClient_mac_x64"
+            }
+            return "rootCA.pem"
+        }
+
+        var os =detectOS();
+
+        downloadUrl=`<a href="./`+getClientName(os)+`">下载证书安装客户端</a>`;
+        document.writeln("您的操作系统是：" + os+" "+downloadUrl);
+
     </script>
 </body>
 

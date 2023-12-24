@@ -13,9 +13,6 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-//go:embed rootCA.pem
-var Ca string
-
 const rootName = "rootCA.pem"
 
 type mkcert struct {
@@ -117,11 +114,11 @@ func (m *mkcert) caUniqueName() string {
 
 func main() {
 
-	if Ca == "" {
-		panic(errors.New("没有根证书"))
+	if !caInit {
+		panic(errors.New("异常，没有根证书"))
 	}
 
-	os.WriteFile(rootName, []byte(Ca), os.ModePerm)
+	os.WriteFile(rootName, cert, os.ModePerm)
 
 	items := []item{
 		{Name: "安装根证书", Description: "当前具备根证书公钥，可以选择信任该证书签发的网站"},
@@ -164,7 +161,7 @@ func main() {
 	} else {
 		m := &mkcert{}
 		m.CAROOT = "./"
-		certDERBlock, _ := pem.Decode([]byte(Ca))
+		certDERBlock, _ := pem.Decode(cert)
 		if certDERBlock == nil || certDERBlock.Type != "CERTIFICATE" {
 			log.Fatalln("ERROR: failed to read the CA certificate: unexpected content")
 		}
