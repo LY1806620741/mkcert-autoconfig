@@ -1,0 +1,21 @@
+name: No Free usage issue checker
+
+# 有趣的action
+
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+  steps:
+    - uses: actions/checkout@v2
+    - name: Check issue actor
+      uses: fluttercandies/no-free-usage-action@v1.0.1
+        with:
+          # 由GitHub提供的临时Token，必须在此处进行传递，且必须为这个值。
+          forked: '--no-forked'
+          token: ${{ secrets.GITHUB_TOKEN }}  
+          words:  为了支持我们的项目，请您在点赞该仓库后提交问题。谢谢！To support our project, please file the issue after you starred the repo. Thanks! 🙂 作者：biewang
