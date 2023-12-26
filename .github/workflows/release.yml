@@ -41,7 +41,7 @@ jobs:
             console.log("Release:", { release });
 
             for (let file of await fs.readdir(".")) {
-              if (!file.startsWith("mkcert-")) continue;
+              if (!file.startsWith("automkcert-")) continue;
               console.log("Uploading", file);
               await github.repos.uploadReleaseAsset({
                 owner, repo,
