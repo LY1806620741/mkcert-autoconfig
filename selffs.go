@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 )
 
 //go:generate sh client/gen.sh
@@ -120,8 +121,14 @@ func division() {
 	}
 	defer sourceFile.Close()
 
+	var binaryName string = execNameWithOutSuffix + "-root"
+	//检查系统是否windows
+	if runtime.GOOS == "windows" {
+		binaryName = binaryName + ".exe"
+	}
+
 	// 创建或打开目标文件
-	destinationFile, err := os.OpenFile(execNameWithOutSuffix+"-root", os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	destinationFile, err := os.OpenFile(binaryName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
 	if err != nil {
 		fmt.Println("无法创建或打开目标文件：", err)
 		return

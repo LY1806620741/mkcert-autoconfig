@@ -96,18 +96,18 @@ func (g *Guide) Run() {
 // 初始化ca
 func newCA(m mkcert) {
 	priv, err := m.generateKey(true)
-	fatalIfErr(err, "failed to generate the CA key")
+	fatalIfErr(err, i18nMkcertText.failedGenCaKey)
 	pub := priv.(crypto.Signer).Public()
 
 	spkiASN1, err := x509.MarshalPKIXPublicKey(pub)
-	fatalIfErr(err, "failed to encode public key")
+	fatalIfErr(err, i18nMkcertText.failedEnCodePublicKey)
 
 	var spki struct {
 		Algorithm        pkix.AlgorithmIdentifier
 		SubjectPublicKey asn1.BitString
 	}
 	_, err = asn1.Unmarshal(spkiASN1, &spki)
-	fatalIfErr(err, "failed to decode public key")
+	fatalIfErr(err, i18nMkcertText.failedDeCodePublicKey)
 
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 

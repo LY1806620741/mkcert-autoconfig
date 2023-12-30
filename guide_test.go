@@ -113,7 +113,7 @@ func TestSubCertMake(t *testing.T) {
 	m.
 		EXPECT().
 		RootMenu().
-		Return(1)
+		Return(0)
 
 	m.
 		EXPECT().
@@ -185,7 +185,7 @@ func TestExportRootCertMake(t *testing.T) {
 	m.
 		EXPECT().
 		RootMenu().
-		Return(2)
+		Return(1)
 
 	caInit = true
 	g := (&Guide{m})

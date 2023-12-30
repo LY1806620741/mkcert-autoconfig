@@ -16,7 +16,7 @@ type I18nText struct {
 
 type I18nMkcertText struct {
 	//
-	moreOptions, shortUsage, advancedUsage string
+	moreOptions, shortUsage, advancedUsage, failedGenCaKey, failedEnCodePublicKey, failedDeCodePublicKey string
 }
 
 var localizer *i18n.Localizer
@@ -124,6 +124,25 @@ func init() {
 		Firefox). Autodetected by default.
 
 `,
+		},
+	})
+
+	i18nMkcertText.failedGenCaKey = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "failedGenCaKey",
+			Other: `failed to generate the CA key`,
+		},
+	})
+	i18nMkcertText.failedEnCodePublicKey = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "failedEnCodePublicKey",
+			Other: `failed to encode public key`,
+		},
+	})
+	i18nMkcertText.failedDeCodePublicKey = localizer.MustLocalize(&i18n.LocalizeConfig{
+		DefaultMessage: &i18n.Message{
+			ID:    "failedDeCodePublicKey",
+			Other: `failed to decode public key`,
 		},
 	})
 }
