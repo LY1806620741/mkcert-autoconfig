@@ -1,3 +1,5 @@
+errUnknownGroupCommand = "错误. 未知的命令 \"{{.Name}}\""
+help = "{{.Name}}的用法:\n\t\t\n    $ {{.Name}} auto\n    使用向导\n\n    $ {{.Name}} mkcert\n    使用 mkcert, 跟原版 mkcert 用法一致.\n\n"
 moreOptions = "有关更多选项，请运行“mkcert-help”。"
 shortUsage = "mkcert 的用法：\n\n\t$ mkcert -install\n\t在系统信任存储中安装本地 CA。\n\n\t$ mkcert example.org\n\t生成 \"example.org.pem\" 和 \"example.org-key.pem\"。\n\n\t$ mkcert example.com myapp.dev localhost 127.0.0.1 ::1\n\t生成 \"example.com+4.pem\" 和 \"example.com+4-key.pem\"。\n\n\t$ mkcert \"*.example.it\"\n\t生成 \"_wildcard.example.it.pem\" 和 \" _wildcard.example.it-key.pem\"。\n\n\t$ mkcert -uninstall\n\t卸载本地 CA（但不删除它）。\n\n"
 

@@ -5,7 +5,7 @@
 
 ```shell
 # 使用管理模式
-mkcert manager
+automkcert auto
 ```
 
 ## 问答

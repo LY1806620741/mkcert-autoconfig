@@ -4,6 +4,7 @@ import (
 	"embed"
 
 	"github.com/BurntSushi/toml"
+	"github.com/cloudfoundry/jibber_jabber"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
@@ -27,13 +28,16 @@ var i18nText I18nText
 var i18nMkcertText I18nMkcertText
 
 func init() {
+	userLanguage, _ := jibber_jabber.DetectLanguage()
+	// println("Language:", userLanguage)
+	userTag := language.MustParse(userLanguage)
 	bundle := i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
 	bundle.LoadMessageFileFS(LocaleFS, "active.zh.toml")
 	tag, _, _ := language.NewMatcher([]language.Tag{
 		language.English,
 		language.Chinese,
-	}).Match()
+	}).Match(userTag)
 	localizer = i18n.NewLocalizer(bundle, tag.String())
 
 	i18nText.help = localizer.MustLocalize(&i18n.LocalizeConfig{
