@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"golang.org/x/tools/go/ast/astutil"
 )
 
 // learn for https://github.com/nicksnyder/go-i18n/blob/main/v2/goi18n/extract_command.go
@@ -32,10 +33,15 @@ func ContainsInSlice(items []string, item string) bool {
 	return false
 }
 
+var messageMap map[string]string
+
+func init() {
+	messageMap = initMessageMap()
+
+}
 func execute() error {
 	paths := []string{"../"}
-	dist := "test/"
-	messageMap := initMessageMap()
+	dist := "../"
 	for _, path := range paths {
 		if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -59,20 +65,15 @@ func execute() error {
 			}
 
 			//不解析要生成的i18n.go
-			if info.Name() == "autoi18n.go" {
+			if info.Name() == "i18n.go" {
 				return nil
 			}
 
-			buf, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
 			log.Println("解析" + path)
-			_, err = extractMessages(buf, &messageMap, dist+info.Name())
+			_, err = extractMessages(path, &messageMap, dist+info.Name())
 			if err != nil {
 				return err
 			}
-			// messages = append(messages, msgs...)
 			return nil
 		}); err != nil {
 			return err
@@ -80,15 +81,17 @@ func execute() error {
 	}
 
 	//autoi18n.go
-	file, _ := os.OpenFile(dist+"autoi18n.go", os.O_CREATE|os.O_RDWR, os.ModePerm)
+	file, _ := os.OpenFile(dist+"i18n.go", os.O_CREATE|os.O_RDWR, os.ModePerm)
 
 	var structList []string = []string{}
 
 	var initStr string = ""
 	for k, v := range messageMap {
-		structList = append(structList, k)
 
-		initStr += `
+		if strings.HasPrefix(k, "scan") {
+			structList = append(structList, k)
+
+			initStr += `
 		i18nText.` + k + ` = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "` + k + `",
@@ -96,6 +99,7 @@ func execute() error {
 			},
 		})
 		`
+		}
 	}
 
 	sort.Strings(structList)
@@ -133,38 +137,16 @@ func init() {
 		language.Chinese,
 	}).Match(userTag)
 	localizer = i18n.NewLocalizer(bundle, tag.String())
-	` + initStr + `
 	//初始化自动收集的待翻译文本
+	` + initStr + `
 }
 	`)
 
-	// messageTemplates := map[string]*i18n.MessageTemplate{}
-	// for _, m := range messages {
-	// 	if mt := i18n.NewMessageTemplate(m); mt != nil {
-	// 		messageTemplates[m.ID] = mt
-	// 	}
-	// }
-	// fmt.Println(messageTemplates)
 	return nil
-}
-
-type extractor struct {
-	messageMap map[string]string
-}
-
-func (e *extractor) Visit(node ast.Node) ast.Visitor {
-	e.extractMessages(node)
-	return e
 }
 
 // 加载已存在的信息
 func initMessageMap() map[string]string {
-	// bundle := i18n.NewBundle(language.English)
-	// bundle.RegisterUnmarshalFunc("toml", toml.Unmarshal)
-
-	// bundle.LoadMessageFile("../active.en.toml")
-
-	// messageTemplates := reflect.ValueOf(bundle).Elem().FieldByName("messageTemplates").Interface().((map[language.Tag]map[string]*MessageTemplate))
 
 	mapo := make(map[string]interface{})
 	file, _ := os.Open("../active.en.toml")
@@ -185,59 +167,52 @@ func initMessageMap() map[string]string {
 		vs, ok1 := v.(string)
 		if ok1 {
 			mapres[k] = vs
-			// fmt.Println(string(k), v)
 		}
 	}
-
-	// fmt.Println(mapo)
 
 	return mapres
 }
 
-func extractMessages(buf []byte, messageMap *map[string]string, name string) (map[string]string, error) {
+func extractMessages(sourcepath string, messageMap *map[string]string, name string) (map[string]string, error) {
 	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, "", buf, parser.AllErrors)
+	node, err := parser.ParseFile(fset, sourcepath, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
-	extractor := newExtractor(messageMap)
-	ast.Walk(extractor, node)
+
+	astutil.Apply(node, nil, func(c *astutil.Cursor) bool {
+
+		n := c.Node()
+		//只处理调用
+
+		if ce, ok := n.(*ast.CallExpr); ok {
+			//区分标识调用还是对象调用
+			switch t := ce.Fun.(type) {
+			case *ast.SelectorExpr:
+				if !isMessageType(t) {
+					return true
+				}
+				extractMessage(ce)
+			case *ast.Ident:
+				if isMessageType(t) {
+					return true
+				}
+				//处理方法调用
+				extractMessage(ce)
+			default:
+			}
+		}
+		return true
+	})
 	file, _ := os.OpenFile(name, os.O_CREATE|os.O_RDWR, os.ModePerm)
 	defer file.Close()
-	format.Node(file, token.NewFileSet(), node)
-	return extractor.messageMap, nil
-}
-
-func newExtractor(messageMap *map[string]string) *extractor {
-	return &extractor{messageMap: *messageMap}
-}
-
-func (e *extractor) extractMessages(node ast.Node) {
-	//只处理调用
-	ce, ok := node.(*ast.CallExpr)
-	if !ok {
-		return
+	if err := format.Node(file, token.NewFileSet(), node); err != nil {
+		log.Fatalln("Error:", err)
 	}
-
-	//区分标识调用还是对象调用
-	switch t := ce.Fun.(type) {
-	case *ast.SelectorExpr:
-		if !e.isMessageType(t) {
-			return
-		}
-		e.extractMessage(ce)
-	case *ast.Ident:
-		if !e.isMessageType(t) {
-			return
-		}
-		//处理方法调用
-		e.extractMessage(ce)
-	default:
-		// log.Println(t)
-	}
+	return nil, nil
 }
 
-func (e *extractor) isMessageType(expr ast.Expr) bool {
+func isMessageType(expr ast.Expr) bool {
 
 	//处理对象函数调用
 	x, ok := expr.(*ast.SelectorExpr)
@@ -266,30 +241,8 @@ func (e *extractor) isMessageType(expr ast.Expr) bool {
 	return false
 }
 
-func unwrapIdent(e ast.Expr) *ast.Ident {
-	switch et := e.(type) {
-	case *ast.Ident:
-		return et
-	default:
-		return nil
-	}
-}
-
-func unwrapSelectorExpr(e ast.Expr) *ast.SelectorExpr {
-	switch et := e.(type) {
-	case *ast.SelectorExpr:
-		return et
-	case *ast.StarExpr:
-		se, _ := et.X.(*ast.SelectorExpr)
-		return se
-	default:
-		return nil
-	}
-}
-
 // 解析其中的文字内容
-func (e *extractor) extractMessage(cl *ast.CallExpr) {
-	// data := make(map[string]string)
+func extractMessage(cl *ast.CallExpr) {
 	_, isIdent := cl.Fun.(*ast.Ident)
 
 	for i, elt := range cl.Args {
@@ -299,52 +252,30 @@ func (e *extractor) extractMessage(cl *ast.CallExpr) {
 
 		if basicok {
 			if isIdent {
-				key := PutIfExistMessage(e.messageMap, basiclin.Value)
+				key := PutIfExistMessage(messageMap, basiclin.Value)
 				newExpr, _ := parser.ParseExpr(`
-				i18nText.` + key + `
-			`)
+					i18nText.` + key + `
+				`)
 				cl.Args[i] = newExpr
 				log.Println("函数调用() " + basiclin.Value)
 
 			} else {
 
 				if basiclin.Kind == token.STRING {
-					key := PutIfExistMessage(e.messageMap, basiclin.Value)
-					//修改参数
+					key := PutIfExistMessage(messageMap, basiclin.Value)
+					// 修改参数
 					newExpr, _ := parser.ParseExpr(`
 										i18nText.` + key + `
 									`)
 					cl.Args[i] = newExpr
-					// log.Println("对象.函数调用()" + basiclin.Value)
 				} else {
 					log.Println("忽略对象.函数调用()" + basiclin.Value)
 				}
 			}
 
 		}
-		continue
 
-		// kve, ok := elt.(*ast.KeyValueExpr)
-		// if !ok {
-		// 	continue
-		// }
-		// key, ok := kve.Key.(*ast.Ident)
-		// if !ok {
-		// 	continue
-		// }
-		// v, ok := extractStringLiteral(kve.Value)
-		// if !ok {
-		// 	continue
-		// }
-		// data[key.Name] = v
 	}
-	// if len(data) == 0 {
-	// 	return
-	// }
-	// if messageID := data["MessageID"]; messageID != "" {
-	// 	data["ID"] = messageID
-	// }
-	// e.messages = append(e.messages, i18n.MustNewMessage(data))
 }
 
 func PutIfExistMessage(maps map[string]string, value string) string {
