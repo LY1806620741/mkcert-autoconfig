@@ -27,7 +27,7 @@ func logtest() {
 
 func view() {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "", srcCode, 0)
+	f, err := parser.ParseFile(fset, "../cert.go", nil, 0)
 	if err != nil {
 		panic(err.Error())
 	}
