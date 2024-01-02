@@ -19,13 +19,13 @@ import (
 )
 
 var (
-	hasJava    bool
-	hasKeytool bool
+	hasJava		bool
+	hasKeytool	bool
 
-	javaHome    string
-	cacertsPath string
-	keytoolPath string
-	storePass   string = "changeit"
+	javaHome	string
+	cacertsPath	string
+	keytoolPath	string
+	storePass	string	= "changeit"
 )
 
 func init() {
@@ -100,7 +100,7 @@ func (m *mkcert) uninstallJava() {
 	}
 	out, err := execKeytool(exec.Command(keytoolPath, args...))
 	if bytes.Contains(out, []byte("does not exist")) {
-		return // cert didn't exist
+		return	// cert didn't exist
 	}
 	fatalIfCmdErr(err, "keytool -delete", out)
 }

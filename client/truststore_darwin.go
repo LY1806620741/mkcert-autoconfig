@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	FirefoxProfiles     = []string{os.Getenv("HOME") + "/Library/Application Support/Firefox/Profiles/*"}
-	CertutilInstallHelp = "brew install nss"
-	NSSBrowsers         = "Firefox"
+	FirefoxProfiles		= []string{os.Getenv("HOME") + "/Library/Application Support/Firefox/Profiles/*"}
+	CertutilInstallHelp	= "brew install nss"
+	NSSBrowsers		= "Firefox"
 )
 
 // https://github.com/golang/go/issues/24652#issuecomment-399826583
@@ -58,7 +58,8 @@ func (m *mkcert) installPlatform() bool {
 	// https://github.com/golang/go/issues/24652
 
 	plistFile, err := ioutil.TempFile("", "trust-settings")
-	fatalIfErr(err, "failed to create temp file")
+	fatalIfErr(err, i18nText.scan95,
+	)
 	defer os.Remove(plistFile.Name())
 
 	cmd = commandWithSudo("security", "trust-settings-export", "-d", plistFile.Name())
@@ -66,15 +67,19 @@ func (m *mkcert) installPlatform() bool {
 	fatalIfCmdErr(err, "security trust-settings-export", out)
 
 	plistData, err := ioutil.ReadFile(plistFile.Name())
-	fatalIfErr(err, "failed to read trust settings")
+	fatalIfErr(err, i18nText.scan95,
+	)
 	var plistRoot map[string]interface{}
 	_, err = plist.Unmarshal(plistData, &plistRoot)
-	fatalIfErr(err, "failed to parse trust settings")
+	fatalIfErr(err, i18nText.scan95,
+	)
 
 	rootSubjectASN1, _ := asn1.Marshal(m.caCert.Subject.ToRDNSequence())
 
 	if plistRoot["trustVersion"].(uint64) != 1 {
-		log.Fatalln("ERROR: unsupported trust settings version:", plistRoot["trustVersion"])
+		log.Fatalln(i18nText.scan95,
+
+			plistRoot["trustVersion"])
 	}
 	trustList := plistRoot["trustList"].(map[string]interface{})
 	for key := range trustList {
@@ -91,9 +96,11 @@ func (m *mkcert) installPlatform() bool {
 	}
 
 	plistData, err = plist.MarshalIndent(plistRoot, plist.XMLFormat, "\t")
-	fatalIfErr(err, "failed to serialize trust settings")
+	fatalIfErr(err, i18nText.scan95,
+	)
 	err = ioutil.WriteFile(plistFile.Name(), plistData, 0600)
-	fatalIfErr(err, "failed to write trust settings")
+	fatalIfErr(err, i18nText.scan95,
+	)
 
 	cmd = commandWithSudo("security", "trust-settings-import", "-d", plistFile.Name())
 	out, err = cmd.CombinedOutput()

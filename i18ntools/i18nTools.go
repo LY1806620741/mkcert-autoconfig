@@ -40,8 +40,8 @@ func init() {
 
 }
 func execute() error {
-	paths := []string{"../"}
-	dist := "../"
+	paths := []string{"../client/"}
+	dist := "../client/"
 	for _, path := range paths {
 		if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -166,7 +166,7 @@ func initMessageMap() map[string]string {
 
 		vs, ok1 := v.(string)
 		if ok1 {
-			mapres[k] = vs
+			mapres[k] = "`" + vs + "`"
 		}
 	}
 

@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	hasNSS       bool
-	hasCertutil  bool
-	certutilPath string
-	nssDBs       = []string{
+	hasNSS		bool
+	hasCertutil	bool
+	certutilPath	string
+	nssDBs		= []string{
 		filepath.Join(os.Getenv("HOME"), ".pki/nssdb"),
-		filepath.Join(os.Getenv("HOME"), "snap/chromium/current/.pki/nssdb"), // Snapcraft
-		"/etc/pki/nssdb", // CentOS 7
+		filepath.Join(os.Getenv("HOME"), "snap/chromium/current/.pki/nssdb"),	// Snapcraft
+		"/etc/pki/nssdb",	// CentOS 7
 	}
-	firefoxPaths = []string{
+	firefoxPaths	= []string{
 		"/usr/bin/firefox",
 		"/usr/bin/firefox-nightly",
 		"/usr/bin/firefox-developer-edition",
@@ -92,12 +92,18 @@ func (m *mkcert) installNSS() bool {
 		out, err := execCertutil(cmd)
 		fatalIfCmdErr(err, "certutil -A -d "+profile, out)
 	}) == 0 {
-		log.Printf("ERROR: no %s security databases found", NSSBrowsers)
+		log.Printf(i18nText.scan95,
+
+			NSSBrowsers)
 		return false
 	}
 	if !m.checkNSS() {
-		log.Printf("Installing in %s failed. Please report the issue with details about your environment at https://github.com/FiloSottile/mkcert/issues/new 👎", NSSBrowsers)
-		log.Printf("Note that if you never started %s, you need to do that at least once.", NSSBrowsers)
+		log.Printf(i18nText.scan95,
+
+			NSSBrowsers)
+		log.Printf(i18nText.scan95,
+
+			NSSBrowsers)
 		return false
 	}
 	return true
