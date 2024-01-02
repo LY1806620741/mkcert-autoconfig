@@ -49,11 +49,13 @@ func init() {
 
 func (m *mkcert) makeCert(hosts []string) {
 	if m.caKey == nil {
-		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA-key.pem) is missing")
+		log.Fatalln(i18nText.scan7,
+		)
 	}
 
 	priv, err := m.generateKey(false)
-	fatalIfErr(err, "failed to generate certificate key")
+	fatalIfErr(err, i18nText.scan8,
+	)
 	pub := priv.(crypto.Signer).Public()
 
 	// Certificates last for 2 years and 3 months, which is always less than
@@ -62,15 +64,15 @@ func (m *mkcert) makeCert(hosts []string) {
 	expiration := time.Now().AddDate(2, 3, 0)
 
 	tpl := &x509.Certificate{
-		SerialNumber: randomSerialNumber(),
+		SerialNumber:	randomSerialNumber(),
 		Subject: pkix.Name{
-			Organization:       []string{"mkcert development certificate"},
-			OrganizationalUnit: []string{userAndHostname},
+			Organization:		[]string{"mkcert development certificate"},
+			OrganizationalUnit:	[]string{userAndHostname},
 		},
 
-		NotBefore: time.Now(), NotAfter: expiration,
+		NotBefore:	time.Now(), NotAfter: expiration,
 
-		KeyUsage: x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		KeyUsage:	x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 	}
 
 	for _, h := range hosts {
@@ -102,62 +104,85 @@ func (m *mkcert) makeCert(hosts []string) {
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, tpl, m.caCert, pub, m.caKey)
-	fatalIfErr(err, "failed to generate certificate")
+	fatalIfErr(err, i18nText.scan9,
+	)
 
 	certFile, keyFile, p12File := m.fileNames(hosts)
 
 	if !m.pkcs12 {
 		certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert})
 		privDER, err := x509.MarshalPKCS8PrivateKey(priv)
-		fatalIfErr(err, "failed to encode certificate key")
+		fatalIfErr(err, i18nText.scan10,
+		)
 		privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})
 
 		if certFile == keyFile {
 			err = ioutil.WriteFile(keyFile, append(certPEM, privPEM...), 0600)
-			fatalIfErr(err, "failed to save certificate and key")
+			fatalIfErr(err, i18nText.scan11,
+			)
 		} else {
 			err = ioutil.WriteFile(certFile, certPEM, 0644)
-			fatalIfErr(err, "failed to save certificate")
+			fatalIfErr(err, i18nText.scan12,
+			)
 			err = ioutil.WriteFile(keyFile, privPEM, 0600)
-			fatalIfErr(err, "failed to save certificate key")
+			fatalIfErr(err, i18nText.scan13,
+			)
 		}
 	} else {
 		domainCert, _ := x509.ParseCertificate(cert)
 		pfxData, err := pkcs12.Encode(rand.Reader, priv, domainCert, []*x509.Certificate{m.caCert}, "changeit")
-		fatalIfErr(err, "failed to generate PKCS#12")
+		fatalIfErr(err, i18nText.scan14,
+		)
 		err = ioutil.WriteFile(p12File, pfxData, 0644)
-		fatalIfErr(err, "failed to save PKCS#12")
+		fatalIfErr(err, i18nText.scan15,
+		)
 	}
 
 	m.printHosts(hosts)
 
 	if !m.pkcs12 {
 		if certFile == keyFile {
-			log.Printf("\nThe certificate and key are at \"%s\" ✅\n\n", certFile)
+			log.Printf(i18nText.scan16,
+
+				certFile)
 		} else {
-			log.Printf("\nThe certificate is at \"%s\" and the key at \"%s\" ✅\n\n", certFile, keyFile)
+			log.Printf(i18nText.scan17,
+
+				certFile, keyFile)
 		}
 	} else {
-		log.Printf("\nThe PKCS#12 bundle is at \"%s\" ✅\n", p12File)
-		log.Printf("\nThe legacy PKCS#12 encryption password is the often hardcoded default \"changeit\" ℹ️\n\n")
+		log.Printf(i18nText.scan18,
+
+			p12File)
+		log.Printf(i18nText.scan19,
+		)
 	}
 
-	log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
+	log.Printf(i18nText.scan20,
+
+		expiration.Format("2 January 2006"))
 }
 
 func (m *mkcert) printHosts(hosts []string) {
 	secondLvlWildcardRegexp := regexp.MustCompile(`(?i)^\*\.[0-9a-z_-]+$`)
-	log.Printf("\nCreated a new certificate valid for the following names 📜")
+	log.Printf(i18nText.scan21,
+	)
 	for _, h := range hosts {
-		log.Printf(" - %q", h)
+		log.Printf(i18nText.scan22,
+
+			h)
 		if secondLvlWildcardRegexp.MatchString(h) {
-			log.Printf("   Warning: many browsers don't support second-level wildcards like %q ⚠️", h)
+			log.Printf(i18nText.scan23,
+
+				h)
 		}
 	}
 
 	for _, h := range hosts {
 		if strings.HasPrefix(h, "*.") {
-			log.Printf("\nReminder: X.509 wildcards only go one level deep, so this won't match a.b.%s ℹ️", h[2:])
+			log.Printf(i18nText.scan24,
+
+				h[2:])
 			break
 		}
 	}
@@ -202,46 +227,52 @@ func (m *mkcert) fileNames(hosts []string) (certFile, keyFile, p12File string) {
 func randomSerialNumber() *big.Int {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	fatalIfErr(err, "failed to generate serial number")
+	fatalIfErr(err, i18nText.scan25,
+	)
 	return serialNumber
 }
 
 func (m *mkcert) makeCertFromCSR() {
 	if m.caKey == nil {
-		log.Fatalln("ERROR: can't create new certificates because the CA key (rootCA-key.pem) is missing")
+		log.Fatalln(i18nText.scan7,
+		)
 	}
 
 	csrPEMBytes, err := ioutil.ReadFile(m.csrPath)
-	fatalIfErr(err, "failed to read the CSR")
+	fatalIfErr(err, i18nText.scan26,
+	)
 	csrPEM, _ := pem.Decode(csrPEMBytes)
 	if csrPEM == nil {
-		log.Fatalln("ERROR: failed to read the CSR: unexpected content")
+		log.Fatalln(i18nText.scan27,
+		)
 	}
 	if csrPEM.Type != "CERTIFICATE REQUEST" &&
 		csrPEM.Type != "NEW CERTIFICATE REQUEST" {
 		log.Fatalln("ERROR: failed to read the CSR: expected CERTIFICATE REQUEST, got " + csrPEM.Type)
 	}
 	csr, err := x509.ParseCertificateRequest(csrPEM.Bytes)
-	fatalIfErr(err, "failed to parse the CSR")
-	fatalIfErr(csr.CheckSignature(), "invalid CSR signature")
+	fatalIfErr(err, i18nText.scan28,
+	)
+	fatalIfErr(csr.CheckSignature(), i18nText.scan29,
+	)
 
 	expiration := time.Now().AddDate(2, 3, 0)
 	tpl := &x509.Certificate{
-		SerialNumber:    randomSerialNumber(),
-		Subject:         csr.Subject,
-		ExtraExtensions: csr.Extensions, // includes requested SANs, KUs and EKUs
+		SerialNumber:		randomSerialNumber(),
+		Subject:		csr.Subject,
+		ExtraExtensions:	csr.Extensions,	// includes requested SANs, KUs and EKUs
 
-		NotBefore: time.Now(), NotAfter: expiration,
+		NotBefore:	time.Now(), NotAfter: expiration,
 
 		// If the CSR does not request a SAN extension, fix it up for them as
 		// the Common Name field does not work in modern browsers. Otherwise,
 		// this will get overridden.
-		DNSNames: []string{csr.Subject.CommonName},
+		DNSNames:	[]string{csr.Subject.CommonName},
 
 		// Likewise, if the CSR does not set KUs and EKUs, fix it up as Apple
 		// platforms require serverAuth for TLS.
-		KeyUsage:    x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage:	x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:	[]x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	}
 
 	if m.client {
@@ -252,9 +283,11 @@ func (m *mkcert) makeCertFromCSR() {
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, tpl, m.caCert, csr.PublicKey, m.caKey)
-	fatalIfErr(err, "failed to generate certificate")
+	fatalIfErr(err, i18nText.scan9,
+	)
 	c, err := x509.ParseCertificate(cert)
-	fatalIfErr(err, "failed to parse generated certificate")
+	fatalIfErr(err, i18nText.scan30,
+	)
 
 	var hosts []string
 	hosts = append(hosts, c.DNSNames...)
@@ -269,13 +302,18 @@ func (m *mkcert) makeCertFromCSR() {
 
 	err = ioutil.WriteFile(certFile, pem.EncodeToMemory(
 		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0644)
-	fatalIfErr(err, "failed to save certificate")
+	fatalIfErr(err, i18nText.scan12,
+	)
 
 	m.printHosts(hosts)
 
-	log.Printf("\nThe certificate is at \"%s\" ✅\n\n", certFile)
+	log.Printf(i18nText.scan31,
 
-	log.Printf("It will expire on %s 🗓\n\n", expiration.Format("2 January 2006"))
+		certFile)
+
+	log.Printf(i18nText.scan20,
+
+		expiration.Format("2 January 2006"))
 }
 
 // loadCA will load or create the CA at CAROOT.
@@ -285,82 +323,96 @@ func (m *mkcert) loadCA() {
 	}
 
 	certPEMBlock, err := ioutil.ReadFile(filepath.Join(m.CAROOT, rootName))
-	fatalIfErr(err, "failed to read the CA certificate")
+	fatalIfErr(err, i18nText.scan32,
+	)
 	certDERBlock, _ := pem.Decode(certPEMBlock)
 	if certDERBlock == nil || certDERBlock.Type != "CERTIFICATE" {
-		log.Fatalln("ERROR: failed to read the CA certificate: unexpected content")
+		log.Fatalln(i18nText.scan33,
+		)
 	}
 	m.caCert, err = x509.ParseCertificate(certDERBlock.Bytes)
-	fatalIfErr(err, "failed to parse the CA certificate")
+	fatalIfErr(err, i18nText.scan34,
+	)
 
 	if !pathExists(filepath.Join(m.CAROOT, rootKeyName)) {
-		return // keyless mode, where only -install works
+		return	// keyless mode, where only -install works
 	}
 
 	keyPEMBlock, err := ioutil.ReadFile(filepath.Join(m.CAROOT, rootKeyName))
-	fatalIfErr(err, "failed to read the CA key")
+	fatalIfErr(err, i18nText.scan35,
+	)
 	keyDERBlock, _ := pem.Decode(keyPEMBlock)
 	if keyDERBlock == nil || keyDERBlock.Type != "PRIVATE KEY" {
-		log.Fatalln("ERROR: failed to read the CA key: unexpected content")
+		log.Fatalln(i18nText.scan36,
+		)
 	}
 	m.caKey, err = x509.ParsePKCS8PrivateKey(keyDERBlock.Bytes)
-	fatalIfErr(err, "failed to parse the CA key")
+	fatalIfErr(err, i18nText.scan37,
+	)
 }
 
 func (m *mkcert) newCA() {
 	priv, err := m.generateKey(true)
-	fatalIfErr(err, "failed to generate the CA key")
+	fatalIfErr(err, i18nText.scan38,
+	)
 	pub := priv.(crypto.Signer).Public()
 
 	spkiASN1, err := x509.MarshalPKIXPublicKey(pub)
-	fatalIfErr(err, "failed to encode public key")
+	fatalIfErr(err, i18nText.scan39,
+	)
 
 	var spki struct {
-		Algorithm        pkix.AlgorithmIdentifier
-		SubjectPublicKey asn1.BitString
+		Algorithm		pkix.AlgorithmIdentifier
+		SubjectPublicKey	asn1.BitString
 	}
 	_, err = asn1.Unmarshal(spkiASN1, &spki)
-	fatalIfErr(err, "failed to decode public key")
+	fatalIfErr(err, i18nText.scan40,
+	)
 
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 
 	tpl := &x509.Certificate{
-		SerialNumber: randomSerialNumber(),
+		SerialNumber:	randomSerialNumber(),
 		Subject: pkix.Name{
-			Organization:       []string{"mkcert development CA"},
-			OrganizationalUnit: []string{userAndHostname},
+			Organization:		[]string{"mkcert development CA"},
+			OrganizationalUnit:	[]string{userAndHostname},
 
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47
-			CommonName: "mkcert " + userAndHostname,
+			CommonName:	"mkcert " + userAndHostname,
 		},
-		SubjectKeyId: skid[:],
+		SubjectKeyId:	skid[:],
 
-		NotAfter:  time.Now().AddDate(10, 0, 0),
-		NotBefore: time.Now(),
+		NotAfter:	time.Now().AddDate(10, 0, 0),
+		NotBefore:	time.Now(),
 
-		KeyUsage: x509.KeyUsageCertSign,
+		KeyUsage:	x509.KeyUsageCertSign,
 
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-		MaxPathLenZero:        true,
+		BasicConstraintsValid:	true,
+		IsCA:			true,
+		MaxPathLenZero:		true,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, tpl, tpl, pub, priv)
-	fatalIfErr(err, "failed to generate CA certificate")
+	fatalIfErr(err, i18nText.scan41,
+	)
 
 	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
-	fatalIfErr(err, "failed to encode CA key")
+	fatalIfErr(err, i18nText.scan42,
+	)
 	err = ioutil.WriteFile(filepath.Join(m.CAROOT, rootKeyName), pem.EncodeToMemory(
 		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER}), 0400)
-	fatalIfErr(err, "failed to save CA key")
+	fatalIfErr(err, i18nText.scan43,
+	)
 
 	err = ioutil.WriteFile(filepath.Join(m.CAROOT, rootName), pem.EncodeToMemory(
 		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0644)
-	fatalIfErr(err, "failed to save CA certificate")
+	fatalIfErr(err, i18nText.scan44,
+	)
 
-	log.Printf("Created a new local CA 💥\n")
+	log.Printf(i18nText.scan45,
+	)
 }
 
 func (m *mkcert) caUniqueName() string {

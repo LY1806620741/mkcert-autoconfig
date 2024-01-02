@@ -1,10 +1,11 @@
 package main
 
+// 执行后执行 goi18n extract
 import (
 	"fmt"
 	"go/ast"
-	"go/format"
 	"go/parser"
+	"go/printer"
 	"go/token"
 	"log"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"golang.org/x/tools/go/ast/astutil"
 )
 
 // learn for https://github.com/nicksnyder/go-i18n/blob/main/v2/goi18n/extract_command.go
@@ -175,17 +175,14 @@ func initMessageMap() map[string]string {
 
 func extractMessages(sourcepath string, messageMap *map[string]string, name string) (map[string]string, error) {
 	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, sourcepath, nil, parser.ParseComments)
+	node, err := parser.ParseFile(fset, sourcepath, nil, parser.ParseComments|parser.AllErrors)
 	if err != nil {
 		return nil, err
 	}
 
-	astutil.Apply(node, nil, func(c *astutil.Cursor) bool {
-
-		n := c.Node()
+	ast.Inspect(node, func(node ast.Node) bool {
 		//只处理调用
-
-		if ce, ok := n.(*ast.CallExpr); ok {
+		if ce, ok := node.(*ast.CallExpr); ok {
 			//区分标识调用还是对象调用
 			switch t := ce.Fun.(type) {
 			case *ast.SelectorExpr:
@@ -194,7 +191,7 @@ func extractMessages(sourcepath string, messageMap *map[string]string, name stri
 				}
 				extractMessage(ce)
 			case *ast.Ident:
-				if isMessageType(t) {
+				if !isMessageType(t) {
 					return true
 				}
 				//处理方法调用
@@ -204,9 +201,11 @@ func extractMessages(sourcepath string, messageMap *map[string]string, name stri
 		}
 		return true
 	})
-	file, _ := os.OpenFile(name, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	file, _ := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, os.ModePerm)
 	defer file.Close()
-	if err := format.Node(file, token.NewFileSet(), node); err != nil {
+	//重置
+	file.Truncate(0)
+	if err := printer.Fprint(file, fset, node); err != nil {
 		log.Fatalln("Error:", err)
 	}
 	return nil, nil
@@ -252,12 +251,17 @@ func extractMessage(cl *ast.CallExpr) {
 
 		if basicok {
 			if isIdent {
-				key := PutIfExistMessage(messageMap, basiclin.Value)
-				newExpr, _ := parser.ParseExpr(`
+				if basiclin.Kind == token.STRING {
+
+					key := PutIfExistMessage(messageMap, basiclin.Value)
+					newExpr, _ := parser.ParseExpr(`
 					i18nText.` + key + `
 				`)
-				cl.Args[i] = newExpr
-				log.Println("函数调用() " + basiclin.Value)
+					cl.Args[i] = newExpr
+					log.Println("函数调用() " + basiclin.Value)
+				} else {
+					log.Println("忽略函数调用() " + basiclin.Value)
+				}
 
 			} else {
 

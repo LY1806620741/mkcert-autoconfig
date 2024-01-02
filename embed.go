@@ -216,8 +216,8 @@ func trimSlash(name string) string {
 }
 
 var (
-	_ fs.ReadDirFS  = FS{}
-	_ fs.ReadFileFS = FS{}
+	_	fs.ReadDirFS	= FS{}
+	_	fs.ReadFileFS	= FS{}
 )
 
 // A File is a single File in the FS.
@@ -225,23 +225,23 @@ var (
 type File struct {
 	// The compiler knows the layout of this struct.
 	// See cmd/compile/internal/staticdata's WriteEmbed.
-	Fname string
-	Data  string
-	Hash  [16]byte // truncated SHA256 hash
+	Fname	string
+	Data	string
+	Hash	[16]byte	// truncated SHA256 hash
 }
 
 var (
-	_ fs.FileInfo = (*File)(nil)
-	_ fs.DirEntry = (*File)(nil)
+	_	fs.FileInfo	= (*File)(nil)
+	_	fs.DirEntry	= (*File)(nil)
 )
 
-func (f *File) Name() string               { _, elem, _ := split(f.Fname); return elem }
-func (f *File) Size() int64                { return int64(len(f.Data)) }
-func (f *File) ModTime() time.Time         { return time.Time{} }
-func (f *File) IsDir() bool                { _, _, isDir := split(f.Fname); return isDir }
-func (f *File) Sys() any                   { return nil }
-func (f *File) Type() fs.FileMode          { return f.Mode().Type() }
-func (f *File) Info() (fs.FileInfo, error) { return f, nil }
+func (f *File) Name() string			{ _, elem, _ := split(f.Fname); return elem }
+func (f *File) Size() int64			{ return int64(len(f.Data)) }
+func (f *File) ModTime() time.Time		{ return time.Time{} }
+func (f *File) IsDir() bool			{ _, _, isDir := split(f.Fname); return isDir }
+func (f *File) Sys() any			{ return nil }
+func (f *File) Type() fs.FileMode		{ return f.Mode().Type() }
+func (f *File) Info() (fs.FileInfo, error)	{ return f, nil }
 
 func (f *File) Mode() fs.FileMode {
 	if f.IsDir() {
@@ -370,8 +370,8 @@ func (f *FS) WriteFile(name string, content string) {
 	}
 
 	file := &File{
-		Fname: name,
-		Data:  content,
+		Fname:	name,
+		Data:	content,
 	}
 	files := *f.Files
 	f2 := append(files, *file)
@@ -400,17 +400,17 @@ func (f FS) ToGob() (bufres bytes.Buffer) {
 
 // An openFile is a regular file open for reading.
 type openFile struct {
-	f      *File // the file itself
-	offset int64 // current read offset
+	f	*File	// the file itself
+	offset	int64	// current read offset
 }
 
 var (
-	_ io.Seeker   = (*openFile)(nil)
-	_ io.ReaderAt = (*openFile)(nil)
+	_	io.Seeker	= (*openFile)(nil)
+	_	io.ReaderAt	= (*openFile)(nil)
 )
 
-func (f *openFile) Close() error               { return nil }
-func (f *openFile) Stat() (fs.FileInfo, error) { return f.f, nil }
+func (f *openFile) Close() error		{ return nil }
+func (f *openFile) Stat() (fs.FileInfo, error)	{ return f.f, nil }
 
 func (f *openFile) Read(b []byte) (int, error) {
 	if f.offset >= int64(len(f.f.Data)) {
@@ -453,13 +453,13 @@ func (f *openFile) ReadAt(b []byte, offset int64) (int, error) {
 
 // An openDir is a directory open for reading.
 type openDir struct {
-	f      *File  // the directory file itself
-	files  []File // the directory contents
-	offset int    // the read offset, an index into the files slice
+	f	*File	// the directory file itself
+	files	[]File	// the directory contents
+	offset	int	// the read offset, an index into the files slice
 }
 
-func (d *openDir) Close() error               { return nil }
-func (d *openDir) Stat() (fs.FileInfo, error) { return d.f, nil }
+func (d *openDir) Close() error			{ return nil }
+func (d *openDir) Stat() (fs.FileInfo, error)	{ return d.f, nil }
 
 func (d *openDir) Read([]byte) (int, error) {
 	return 0, &fs.PathError{Op: "read", Path: d.f.Fname, Err: errors.New("is a directory")}
@@ -490,12 +490,12 @@ func sortSearch(n int, f func(int) bool) int {
 	// Invariant: f(i-1) == false, f(j) == true.
 	i, j := 0, n
 	for i < j {
-		h := int(uint(i+j) >> 1) // avoid overflow when computing h
+		h := int(uint(i+j) >> 1)	// avoid overflow when computing h
 		// i ≤ h < j
 		if !f(h) {
-			i = h + 1 // preserves f(i-1) == false
+			i = h + 1	// preserves f(i-1) == false
 		} else {
-			j = h // preserves f(j) == true
+			j = h	// preserves f(j) == true
 		}
 	}
 	// i == j, f(i-1) == false, and f(j) (= f(i)) == true  =>  answer is i.

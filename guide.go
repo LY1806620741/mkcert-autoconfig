@@ -36,13 +36,15 @@ func (g *Guide) Run() {
 		//生成子证书
 		if rootIndex == 0 {
 			m.makeCert(g.prompt.InputHost())
-		} else if rootIndex == 1 { //导出根证书
+		} else if rootIndex == 1 {	//导出根证书
 			keyContent, _ := selffs.ReadFile(rootKeyName)
 			os.WriteFile(rootKeyName, keyContent, 0666)
 			pemContent, _ := selffs.ReadFile(rootName)
 			os.WriteFile(rootName, pemContent, 0666)
-			log.Println("已导出到当前目录下")
-		} else if rootIndex == 2 { //导出客户端
+			log.Println(i18nText.
+				scan46,
+			)
+		} else if rootIndex == 2 {	//导出客户端
 			//生成html或客户端
 			//解压客户端
 
@@ -73,7 +75,9 @@ func (g *Guide) Run() {
 			b2, _ := selffs.ReadFile(rootName)
 			os.WriteFile("dist/"+rootName, b2, os.ModePerm)
 
-			log.Println("已生成授信客户端，在当前dist目录下，请在你的服务器进行部署")
+			log.Println(i18nText.
+				scan47,
+			)
 		}
 
 		//退出
@@ -85,9 +89,11 @@ func (g *Guide) Run() {
 			division()
 
 			if m.checkPlatform() {
-				log.Print("The local CA is already installed in the system trust store! 👍")
+				log.Print(i18nText.
+					scan48,
+				)
 			} else {
-				m.ignoreCheckFailure = true // TODO: replace with a check for a successful install
+				m.ignoreCheckFailure = true	// TODO: replace with a check for a successful install
 			}
 		}
 	}
@@ -103,8 +109,8 @@ func newCA(m mkcert) {
 	fatalIfErr(err, i18nMkcertText.failedEnCodePublicKey)
 
 	var spki struct {
-		Algorithm        pkix.AlgorithmIdentifier
-		SubjectPublicKey asn1.BitString
+		Algorithm		pkix.AlgorithmIdentifier
+		SubjectPublicKey	asn1.BitString
 	}
 	_, err = asn1.Unmarshal(spkiASN1, &spki)
 	fatalIfErr(err, i18nMkcertText.failedDeCodePublicKey)
@@ -112,61 +118,83 @@ func newCA(m mkcert) {
 	skid := sha1.Sum(spki.SubjectPublicKey.Bytes)
 
 	tpl := &x509.Certificate{
-		SerialNumber: randomSerialNumber(),
+		SerialNumber:	randomSerialNumber(),
 		Subject: pkix.Name{
-			Organization:       []string{"mkcert development CA"},
-			OrganizationalUnit: []string{userAndHostname},
+			Organization:		[]string{"mkcert development CA"},
+			OrganizationalUnit:	[]string{userAndHostname},
 
 			// The CommonName is required by iOS to show the certificate in the
 			// "Certificate Trust Settings" menu.
 			// https://github.com/FiloSottile/mkcert/issues/47
-			CommonName: "mkcert " + userAndHostname,
+			CommonName:	"mkcert " + userAndHostname,
 		},
-		SubjectKeyId: skid[:],
+		SubjectKeyId:	skid[:],
 
-		NotAfter:  time.Now().AddDate(10, 0, 0),
-		NotBefore: time.Now(),
+		NotAfter:	time.Now().AddDate(10, 0, 0),
+		NotBefore:	time.Now(),
 
-		KeyUsage: x509.KeyUsageCertSign,
+		KeyUsage:	x509.KeyUsageCertSign,
 
-		BasicConstraintsValid: true,
-		IsCA:                  true,
-		MaxPathLenZero:        true,
+		BasicConstraintsValid:	true,
+		IsCA:			true,
+		MaxPathLenZero:		true,
 	}
 
 	cert, err := x509.CreateCertificate(rand.Reader, tpl, tpl, pub, priv)
-	fatalIfErr(err, "failed to generate CA certificate")
+	fatalIfErr(err, i18nText.
+		scan41,
+	)
 
 	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
-	fatalIfErr(err, "failed to encode CA key")
+	fatalIfErr(err, i18nText.
+		scan42,
+	)
 	selffs.WriteFile(rootKeyName, string(pem.EncodeToMemory(
 		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})))
-	fatalIfErr(err, "failed to save CA key")
+	fatalIfErr(err, i18nText.
+		scan43,
+	)
 
 	selffs.WriteFile(rootName, string(pem.EncodeToMemory(
 		&pem.Block{Type: "CERTIFICATE", Bytes: cert})))
-	fatalIfErr(err, "failed to save CA certificate")
+	fatalIfErr(err, i18nText.
+		scan44,
+	)
 
-	log.Printf("生成了根证书客户端automkcert-root 💥\n")
+	log.Printf(i18nText.
+		scan49,
+	)
 }
 
 func loadCA(m *mkcert) {
 
 	certPEMBlock, err := selffs.ReadFile(rootName)
-	fatalIfErr(err, "failed to read the CA certificate")
+	fatalIfErr(err, i18nText.
+		scan32,
+	)
 	certDERBlock, _ := pem.Decode(certPEMBlock)
 	if certDERBlock == nil || certDERBlock.Type != "CERTIFICATE" {
-		log.Fatalln("ERROR: failed to read the CA certificate: unexpected content")
+		log.Fatalln(i18nText.
+			scan33,
+		)
 	}
 	m.caCert, err = x509.ParseCertificate(certDERBlock.Bytes)
-	fatalIfErr(err, "failed to parse the CA certificate")
+	fatalIfErr(err, i18nText.
+		scan34,
+	)
 
 	keyPEMBlock, err := selffs.ReadFile(rootKeyName)
-	fatalIfErr(err, "failed to read the CA key")
+	fatalIfErr(err, i18nText.
+		scan35,
+	)
 	keyDERBlock, _ := pem.Decode(keyPEMBlock)
 	if keyDERBlock == nil || keyDERBlock.Type != "PRIVATE KEY" {
-		log.Fatalln("ERROR: failed to read the CA key: unexpected content")
+		log.Fatalln(i18nText.
+			scan36,
+		)
 	}
 	m.caKey, err = x509.ParsePKCS8PrivateKey(keyDERBlock.Bytes)
-	fatalIfErr(err, "failed to parse the CA key")
+	fatalIfErr(err, i18nText.
+		scan37,
+	)
 }

@@ -21,8 +21,8 @@ type prompt struct {
 }
 
 type item struct {
-	Name        string
-	Description string
+	Name		string
+	Description	string
 }
 
 func (p *prompt) GenRootCert() bool {
@@ -31,10 +31,10 @@ func (p *prompt) GenRootCert() bool {
 	}
 
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | cyan }}",
-		Inactive: "  {{ .Name | cyan }}",
-		Selected: "\U0001F336 {{ .Name | red | cyan }}",
+		Label:		"{{ . }}?",
+		Active:		"\U0001F336 {{ .Name | cyan }}",
+		Inactive:	"  {{ .Name | cyan }}",
+		Selected:	"\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
 --------- 详情 ----------
 {{ "名字:" | faint }}	{{ .Name }}
@@ -50,11 +50,11 @@ func (p *prompt) GenRootCert() bool {
 	}
 
 	prompt := promptui.Select{
-		Label:     "你要做什么",
-		Items:     items,
-		Templates: templates,
-		Size:      4,
-		Searcher:  searcher,
+		Label:		"你要做什么",
+		Items:		items,
+		Templates:	templates,
+		Size:		4,
+		Searcher:	searcher,
 	}
 
 	i, _, err := prompt.Run()
@@ -75,10 +75,10 @@ func (p *prompt) RootMenu() int {
 	}
 
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | cyan }}",
-		Inactive: "  {{ .Name | cyan }}",
-		Selected: "\U0001F336 {{ .Name | red | cyan }}",
+		Label:		"{{ . }}?",
+		Active:		"\U0001F336 {{ .Name | cyan }}",
+		Inactive:	"  {{ .Name | cyan }}",
+		Selected:	"\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
 --------- 详情 ----------
 {{ "名字:" | faint }}	{{ .Name }}
@@ -94,11 +94,11 @@ func (p *prompt) RootMenu() int {
 	}
 
 	prompt := promptui.Select{
-		Label:     "当前是携带根证书,你要做什么",
-		Items:     items,
-		Templates: templates,
-		Size:      4,
-		Searcher:  searcher,
+		Label:		"当前是携带根证书,你要做什么",
+		Items:		items,
+		Templates:	templates,
+		Size:		4,
+		Searcher:	searcher,
 	}
 
 	i, _, err := prompt.Run()
@@ -128,16 +128,16 @@ func (p *prompt) InputHost() []string {
 	}
 
 	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
+		Prompt:		"{{ . }} ",
+		Valid:		"{{ . | green }} ",
+		Invalid:	"{{ . | red }} ",
+		Success:	"{{ . | bold }} ",
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "输入服务器的域名以及ip,逗号隔开",
-		Templates: templates,
-		Validate:  validate,
+		Label:		"输入服务器的域名以及ip,逗号隔开",
+		Templates:	templates,
+		Validate:	validate,
 	}
 
 	result, err := prompt.Run()
