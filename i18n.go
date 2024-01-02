@@ -170,7 +170,7 @@ func init() {
 	i18nText.scan47 = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "scan47",
-			Other: "已生成授信客户端，在当前dist目录下，请在你的服务器进行部署",
+			Other: "The credit client has been generated and is currently in the dist directory. Please deploy it on your server.",
 		},
 	})
 
@@ -317,7 +317,7 @@ func init() {
 	i18nText.scan49 = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "scan49",
-			Other: "生成了根证书客户端automkcert-root 💥\n",
+			Other: "Root certificate client generated automkcert-root 💥\n",
 		},
 	})
 
@@ -387,7 +387,7 @@ func init() {
 	i18nText.scan46 = localizer.MustLocalize(&i18n.LocalizeConfig{
 		DefaultMessage: &i18n.Message{
 			ID:    "scan46",
-			Other: "已导出到当前目录下",
+			Other: "Exported to the current directory",
 		},
 	})
 
