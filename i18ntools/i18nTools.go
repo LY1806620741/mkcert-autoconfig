@@ -95,7 +95,7 @@ func execute() error {
 		i18nText.` + k + ` = localizer.MustLocalize(&i18n.LocalizeConfig{
 			DefaultMessage: &i18n.Message{
 				ID:    "` + k + `",
-				Other: ` + v + `,
+				Other: ` + "`" + v + "`" + `,
 			},
 		})
 		`
@@ -166,7 +166,7 @@ func initMessageMap() map[string]string {
 
 		vs, ok1 := v.(string)
 		if ok1 {
-			mapres[k] = "`" + vs + "`"
+			mapres[k] = vs
 		}
 	}
 
@@ -283,14 +283,16 @@ func extractMessage(cl *ast.CallExpr) {
 }
 
 func PutIfExistMessage(maps map[string]string, value string) string {
+
+	unquoteValue, _ := strconv.Unquote(value)
 	for k, v := range maps {
-		if v == value {
+		if v == unquoteValue {
 			log.Println("重复")
 			return k
 		}
 	}
 	key := fmt.Sprintf("scan%d", len(maps))
-	maps[key] = value
+	maps[key] = unquoteValue
 	return key
 }
 
