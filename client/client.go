@@ -16,13 +16,13 @@ import (
 const rootName = "rootCA.pem"
 
 type mkcert struct {
-	CAROOT	string
-	caCert	*x509.Certificate
+	CAROOT string
+	caCert *x509.Certificate
 
 	// The system cert pool is only loaded once. After installing the root, checks
 	// will keep failing until the next execution. TODO: maybe execve?
 	// https://github.com/golang/go/issues/24540 (thanks, myself)
-	ignoreCheckFailure	bool
+	ignoreCheckFailure bool
 }
 
 func (m *mkcert) checkPlatform() bool {
@@ -37,68 +37,41 @@ func (m *mkcert) checkPlatform() bool {
 func (m *mkcert) install() {
 	if storeEnabled("system") {
 		if m.checkPlatform() {
-			log.Print(i18nText.
-				scan95,
-			)
+			log.Print("The local CA is already installed in the system trust store! 👍")
 		} else {
 			if m.installPlatform() {
-				log.Print(i18nText.
-					scan95,
-				)
+				log.Print("The local CA is now installed in the system trust store! ⚡️")
 			}
-			m.ignoreCheckFailure = true	// TODO: replace with a check for a successful install
+			m.ignoreCheckFailure = true // TODO: replace with a check for a successful install
 		}
 	}
 	if storeEnabled("nss") && hasNSS {
 		if m.checkNSS() {
-			log.Printf(i18nText.
-				scan95,
-
-				NSSBrowsers)
+			log.Printf("The local CA is already installed in the %s trust store! 👍", NSSBrowsers)
 		} else {
 			if hasCertutil && m.installNSS() {
-				log.Printf(i18nText.
-					scan95,
-
-					NSSBrowsers)
+				log.Printf("The local CA is now installed in the %s trust store (requires browser restart)! 🦊", NSSBrowsers)
 			} else if CertutilInstallHelp == "" {
-				log.Printf(i18nText.
-					scan65,
-
-					NSSBrowsers)
+				log.Printf(`Note: %s support is not available on your platform. ℹ️`, NSSBrowsers)
 			} else if !hasCertutil {
-				log.Printf(i18nText.
-					scan66,
-
-					NSSBrowsers)
-				log.Printf(i18nText.
-					scan67,
-
-					CertutilInstallHelp)
+				log.Printf(`Warning: "certutil" is not available, so the CA can't be automatically installed in %s! ⚠️`, NSSBrowsers)
+				log.Printf(`Install "certutil" with "%s" and re-run "mkcert -install" 👈`, CertutilInstallHelp)
 			}
 		}
 	}
 	if storeEnabled("java") && hasJava {
 		if m.checkJava() {
-			log.Println(i18nText.
-				scan95,
-			)
+			log.Println("The local CA is already installed in Java's trust store! 👍")
 		} else {
 			if hasKeytool {
 				m.installJava()
-				log.Println(i18nText.
-					scan95,
-				)
+				log.Println("The local CA is now installed in Java's trust store! ☕️")
 			} else {
-				log.Println(i18nText.
-					scan70,
-				)
+				log.Println(`Warning: "keytool" is not available, so the CA can't be automatically installed in Java's trust store! ⚠️`)
 			}
 		}
 	}
-	log.Print(i18nText.
-		scan95,
-	)
+	log.Print("")
 }
 
 func (m *mkcert) uninstall() {
@@ -106,58 +79,33 @@ func (m *mkcert) uninstall() {
 		if hasCertutil {
 			m.uninstallNSS()
 		} else if CertutilInstallHelp != "" {
-			log.Print(i18nText.
-				scan95,
-			)
-			log.Printf(i18nText.
-				scan72,
-
-				NSSBrowsers)
-			log.Printf(i18nText.
-				scan73,
-
-				CertutilInstallHelp)
-			log.Print(i18nText.
-				scan95,
-			)
+			log.Print("")
+			log.Printf(`Warning: "certutil" is not available, so the CA can't be automatically uninstalled from %s (if it was ever installed)! ⚠️`, NSSBrowsers)
+			log.Printf(`You can install "certutil" with "%s" and re-run "mkcert -uninstall" 👈`, CertutilInstallHelp)
+			log.Print("")
 		}
 	}
 	if storeEnabled("java") && hasJava {
 		if hasKeytool {
 			m.uninstallJava()
 		} else {
-			log.Print(i18nText.
-				scan95,
-			)
-			log.Println(i18nText.
-				scan74,
-			)
-			log.Print(i18nText.
-				scan95,
-			)
+			log.Print("")
+			log.Println(`Warning: "keytool" is not available, so the CA can't be automatically uninstalled from Java's trust store (if it was ever installed)! ⚠️`)
+			log.Print("")
 		}
 	}
 	if storeEnabled("system") && m.uninstallPlatform() {
-		log.Print(i18nText.
-			scan95,
-		)
-		log.Print(i18nText.
-			scan95,
-		)
+		log.Print("The local CA is now uninstalled from the system trust store(s)! 👋")
+		log.Print("")
 	} else if storeEnabled("nss") && hasCertutil {
-		log.Printf(i18nText.
-			scan95,
-
-			NSSBrowsers)
-		log.Print(i18nText.
-			scan95,
-		)
+		log.Printf("The local CA is now uninstalled from the %s trust store(s)! 👋", NSSBrowsers)
+		log.Print("")
 	}
 }
 
 type item struct {
-	Name		string
-	Description	string
+	Name        string
+	Description string
 }
 
 func (m *mkcert) caUniqueName() string {
@@ -179,10 +127,10 @@ func main() {
 	}
 
 	templates := &promptui.SelectTemplates{
-		Label:		"{{ . }}?",
-		Active:		"\U0001F336 {{ .Name | cyan }}",
-		Inactive:	"  {{ .Name | cyan }}",
-		Selected:	"\U0001F336 {{ .Name | red | cyan }}",
+		Label:    "{{ . }}?",
+		Active:   "\U0001F336 {{ .Name | cyan }}",
+		Inactive: "  {{ .Name | cyan }}",
+		Selected: "\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
 --------- 详情 ----------
 {{ "名字:" | faint }}	{{ .Name }}
@@ -198,33 +146,27 @@ func main() {
 	}
 
 	prompt := promptui.Select{
-		Label:		"当前是授信客户端,你要做什么",
-		Items:		items,
-		Templates:	templates,
-		Size:		4,
-		Searcher:	searcher,
+		Label:     "当前是授信客户端,你要做什么",
+		Items:     items,
+		Templates: templates,
+		Size:      4,
+		Searcher:  searcher,
 	}
 
 	i, _, err := prompt.Run()
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
-		log.Fatalln(i18nText.
-			scan95,
-		)
+		log.Fatalln("选择错误")
 	} else {
 		m := &mkcert{}
 		m.CAROOT = "./"
 		certDERBlock, _ := pem.Decode(cert)
 		if certDERBlock == nil || certDERBlock.Type != "CERTIFICATE" {
-			log.Fatalln(i18nText.
-				scan95,
-			)
+			log.Fatalln("ERROR: failed to read the CA certificate: unexpected content")
 		}
 		m.caCert, err = x509.ParseCertificate(certDERBlock.Bytes)
-		fatalIfErr(err, i18nText.
-			scan95,
-		)
+		fatalIfErr(err, "failed to parse the CA certificate")
 		if i == 0 {
 			m.install()
 		} else if i == 1 {

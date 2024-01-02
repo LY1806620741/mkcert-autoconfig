@@ -17,41 +17,37 @@ import (
 )
 
 var (
-	FirefoxProfiles		= []string{os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"}
-	CertutilInstallHelp	= ""	// certutil unsupported on Windows
-	NSSBrowsers		= "Firefox"
+	FirefoxProfiles     = []string{os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"}
+	CertutilInstallHelp = "" // certutil unsupported on Windows
+	NSSBrowsers         = "Firefox"
 )
 
 var (
-	modcrypt32				= syscall.NewLazyDLL("crypt32.dll")
-	procCertAddEncodedCertificateToStore	= modcrypt32.NewProc("CertAddEncodedCertificateToStore")
-	procCertCloseStore			= modcrypt32.NewProc("CertCloseStore")
-	procCertDeleteCertificateFromStore	= modcrypt32.NewProc("CertDeleteCertificateFromStore")
-	procCertDuplicateCertificateContext	= modcrypt32.NewProc("CertDuplicateCertificateContext")
-	procCertEnumCertificatesInStore		= modcrypt32.NewProc("CertEnumCertificatesInStore")
-	procCertOpenSystemStoreW		= modcrypt32.NewProc("CertOpenSystemStoreW")
+	modcrypt32                           = syscall.NewLazyDLL("crypt32.dll")
+	procCertAddEncodedCertificateToStore = modcrypt32.NewProc("CertAddEncodedCertificateToStore")
+	procCertCloseStore                   = modcrypt32.NewProc("CertCloseStore")
+	procCertDeleteCertificateFromStore   = modcrypt32.NewProc("CertDeleteCertificateFromStore")
+	procCertDuplicateCertificateContext  = modcrypt32.NewProc("CertDuplicateCertificateContext")
+	procCertEnumCertificatesInStore      = modcrypt32.NewProc("CertEnumCertificatesInStore")
+	procCertOpenSystemStoreW             = modcrypt32.NewProc("CertOpenSystemStoreW")
 )
 
 func (m *mkcert) installPlatform() bool {
 	// Load cert
 	cert, err := ioutil.ReadFile(filepath.Join(m.CAROOT, rootName))
-	fatalIfErr(err, i18nText.scan95,
-	)
+	fatalIfErr(err, "failed to read root certificate")
 	// Decode PEM
 	if certBlock, _ := pem.Decode(cert); certBlock == nil || certBlock.Type != "CERTIFICATE" {
-		fatalIfErr(fmt.Errorf("invalid PEM data"), i18nText.scan95,
-		)
+		fatalIfErr(fmt.Errorf("invalid PEM data"), "decode pem")
 	} else {
 		cert = certBlock.Bytes
 	}
 	// Open root store
 	store, err := openWindowsRootStore()
-	fatalIfErr(err, i18nText.scan95,
-	)
+	fatalIfErr(err, "open root store")
 	defer store.close()
 	// Add cert
-	fatalIfErr(store.addCert(cert), i18nText.scan95,
-	)
+	fatalIfErr(store.addCert(cert), "add cert")
 	return true
 }
 
@@ -59,16 +55,14 @@ func (m *mkcert) uninstallPlatform() bool {
 	// We'll just remove all certs with the same serial number
 	// Open root store
 	store, err := openWindowsRootStore()
-	fatalIfErr(err, i18nText.scan95,
-	)
+	fatalIfErr(err, "open root store")
 	defer store.close()
 	// Do the deletion
 	deletedAny, err := store.deleteCertsWithSerial(m.caCert.SerialNumber)
 	if err == nil && !deletedAny {
 		err = fmt.Errorf("no certs found")
 	}
-	fatalIfErr(err, i18nText.scan95,
-	)
+	fatalIfErr(err, "delete cert")
 	return true
 }
 
@@ -97,12 +91,12 @@ func (w windowsRootStore) close() error {
 func (w windowsRootStore) addCert(cert []byte) error {
 	// TODO: ok to always overwrite?
 	ret, _, err := procCertAddEncodedCertificateToStore.Call(
-		uintptr(w),	// HCERTSTORE hCertStore
-		uintptr(syscall.X509_ASN_ENCODING|syscall.PKCS_7_ASN_ENCODING),	// DWORD dwCertEncodingType
-		uintptr(unsafe.Pointer(&cert[0])),				// const BYTE *pbCertEncoded
-		uintptr(len(cert)),						// DWORD cbCertEncoded
-		3,								// DWORD dwAddDisposition (CERT_STORE_ADD_REPLACE_EXISTING is 3)
-		0,								// PCCERT_CONTEXT *ppCertContext
+		uintptr(w), // HCERTSTORE hCertStore
+		uintptr(syscall.X509_ASN_ENCODING|syscall.PKCS_7_ASN_ENCODING), // DWORD dwCertEncodingType
+		uintptr(unsafe.Pointer(&cert[0])),                              // const BYTE *pbCertEncoded
+		uintptr(len(cert)),                                             // DWORD cbCertEncoded
+		3,                                                              // DWORD dwAddDisposition (CERT_STORE_ADD_REPLACE_EXISTING is 3)
+		0,                                                              // PCCERT_CONTEXT *ppCertContext
 	)
 	if ret != 0 {
 		return nil
