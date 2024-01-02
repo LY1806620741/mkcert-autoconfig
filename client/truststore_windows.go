@@ -17,37 +17,42 @@ import (
 )
 
 var (
-	FirefoxProfiles     = []string{os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"}
-	CertutilInstallHelp = "" // certutil unsupported on Windows
-	NSSBrowsers         = "Firefox"
+	FirefoxProfiles		= []string{os.Getenv("USERPROFILE") + "\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles"}
+	CertutilInstallHelp	= ""	// certutil unsupported on Windows
+	NSSBrowsers		= "Firefox"
 )
 
 var (
-	modcrypt32                           = syscall.NewLazyDLL("crypt32.dll")
-	procCertAddEncodedCertificateToStore = modcrypt32.NewProc("CertAddEncodedCertificateToStore")
-	procCertCloseStore                   = modcrypt32.NewProc("CertCloseStore")
-	procCertDeleteCertificateFromStore   = modcrypt32.NewProc("CertDeleteCertificateFromStore")
-	procCertDuplicateCertificateContext  = modcrypt32.NewProc("CertDuplicateCertificateContext")
-	procCertEnumCertificatesInStore      = modcrypt32.NewProc("CertEnumCertificatesInStore")
-	procCertOpenSystemStoreW             = modcrypt32.NewProc("CertOpenSystemStoreW")
+	modcrypt32				= syscall.NewLazyDLL("crypt32.dll")
+	procCertAddEncodedCertificateToStore	= modcrypt32.NewProc("CertAddEncodedCertificateToStore")
+	procCertCloseStore			= modcrypt32.NewProc("CertCloseStore")
+	procCertDeleteCertificateFromStore	= modcrypt32.NewProc("CertDeleteCertificateFromStore")
+	procCertDuplicateCertificateContext	= modcrypt32.NewProc("CertDuplicateCertificateContext")
+	procCertEnumCertificatesInStore		= modcrypt32.NewProc("CertEnumCertificatesInStore")
+	procCertOpenSystemStoreW		= modcrypt32.NewProc("CertOpenSystemStoreW")
 )
 
 func (m *mkcert) installPlatform() bool {
 	// Load cert
 	cert, err := ioutil.ReadFile(filepath.Join(m.CAROOT, rootName))
-	fatalIfErr(err, "failed to read root certificate")
+	fatalIfErr(err, i18nText.scan88,
+	)
 	// Decode PEM
 	if certBlock, _ := pem.Decode(cert); certBlock == nil || certBlock.Type != "CERTIFICATE" {
-		fatalIfErr(fmt.Errorf("invalid PEM data"), "decode pem")
+		fatalIfErr(fmt.Errorf(i18nText.scan104,
+		), i18nText.scan92,
+		)
 	} else {
 		cert = certBlock.Bytes
 	}
 	// Open root store
 	store, err := openWindowsRootStore()
-	fatalIfErr(err, "open root store")
+	fatalIfErr(err, i18nText.scan93,
+	)
 	defer store.close()
 	// Add cert
-	fatalIfErr(store.addCert(cert), "add cert")
+	fatalIfErr(store.addCert(cert), i18nText.scan94,
+	)
 	return true
 }
 
@@ -55,14 +60,17 @@ func (m *mkcert) uninstallPlatform() bool {
 	// We'll just remove all certs with the same serial number
 	// Open root store
 	store, err := openWindowsRootStore()
-	fatalIfErr(err, "open root store")
+	fatalIfErr(err, i18nText.scan93,
+	)
 	defer store.close()
 	// Do the deletion
 	deletedAny, err := store.deleteCertsWithSerial(m.caCert.SerialNumber)
 	if err == nil && !deletedAny {
-		err = fmt.Errorf("no certs found")
+		err = fmt.Errorf(i18nText.scan105,
+		)
 	}
-	fatalIfErr(err, "delete cert")
+	fatalIfErr(err, i18nText.scan95,
+	)
 	return true
 }
 
@@ -77,7 +85,9 @@ func openWindowsRootStore() (windowsRootStore, error) {
 	if store != 0 {
 		return windowsRootStore(store), nil
 	}
-	return 0, fmt.Errorf("failed to open windows root store: %v", err)
+	return 0, fmt.Errorf(i18nText.scan106,
+
+		err)
 }
 
 func (w windowsRootStore) close() error {
@@ -85,23 +95,27 @@ func (w windowsRootStore) close() error {
 	if ret != 0 {
 		return nil
 	}
-	return fmt.Errorf("failed to close windows root store: %v", err)
+	return fmt.Errorf(i18nText.scan107,
+
+		err)
 }
 
 func (w windowsRootStore) addCert(cert []byte) error {
 	// TODO: ok to always overwrite?
 	ret, _, err := procCertAddEncodedCertificateToStore.Call(
-		uintptr(w), // HCERTSTORE hCertStore
-		uintptr(syscall.X509_ASN_ENCODING|syscall.PKCS_7_ASN_ENCODING), // DWORD dwCertEncodingType
-		uintptr(unsafe.Pointer(&cert[0])),                              // const BYTE *pbCertEncoded
-		uintptr(len(cert)),                                             // DWORD cbCertEncoded
-		3,                                                              // DWORD dwAddDisposition (CERT_STORE_ADD_REPLACE_EXISTING is 3)
-		0,                                                              // PCCERT_CONTEXT *ppCertContext
+		uintptr(w),	// HCERTSTORE hCertStore
+		uintptr(syscall.X509_ASN_ENCODING|syscall.PKCS_7_ASN_ENCODING),	// DWORD dwCertEncodingType
+		uintptr(unsafe.Pointer(&cert[0])),				// const BYTE *pbCertEncoded
+		uintptr(len(cert)),						// DWORD cbCertEncoded
+		3,								// DWORD dwAddDisposition (CERT_STORE_ADD_REPLACE_EXISTING is 3)
+		0,								// PCCERT_CONTEXT *ppCertContext
 	)
 	if ret != 0 {
 		return nil
 	}
-	return fmt.Errorf("failed adding cert: %v", err)
+	return fmt.Errorf(i18nText.scan108,
+
+		err)
 }
 
 func (w windowsRootStore) deleteCertsWithSerial(serial *big.Int) (bool, error) {
@@ -115,7 +129,9 @@ func (w windowsRootStore) deleteCertsWithSerial(serial *big.Int) (bool, error) {
 			if errno, ok := err.(syscall.Errno); ok && errno == 0x80092004 {
 				break
 			}
-			return deletedAny, fmt.Errorf("failed enumerating certs: %v", err)
+			return deletedAny, fmt.Errorf(i18nText.scan109,
+
+				err)
 		}
 		// Parse cert
 		certBytes := (*[1 << 20]byte)(unsafe.Pointer(cert.EncodedCert))[:cert.Length]
@@ -125,10 +141,14 @@ func (w windowsRootStore) deleteCertsWithSerial(serial *big.Int) (bool, error) {
 			// Duplicate the context so it doesn't stop the enum when we delete it
 			dupCertPtr, _, err := procCertDuplicateCertificateContext.Call(uintptr(unsafe.Pointer(cert)))
 			if dupCertPtr == 0 {
-				return deletedAny, fmt.Errorf("failed duplicating context: %v", err)
+				return deletedAny, fmt.Errorf(i18nText.scan110,
+
+					err)
 			}
 			if ret, _, err := procCertDeleteCertificateFromStore.Call(dupCertPtr); ret == 0 {
-				return deletedAny, fmt.Errorf("failed deleting certificate: %v", err)
+				return deletedAny, fmt.Errorf(i18nText.scan111,
+
+					err)
 			}
 			deletedAny = true
 		}

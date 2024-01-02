@@ -34,6 +34,7 @@ func ContainsInSlice(items []string, item string) bool {
 }
 
 var messageMap map[string]string
+var messageIndex int = 0
 
 func init() {
 	messageMap = initMessageMap()
@@ -167,6 +168,15 @@ func initMessageMap() map[string]string {
 		vs, ok1 := v.(string)
 		if ok1 {
 			mapres[k] = vs
+			if strings.HasPrefix(k, "scan") {
+				interStr := strings.TrimPrefix(k, "scan")
+				if inter, interOk := strconv.Atoi(interStr); interOk == nil {
+					if messageIndex <= inter {
+						messageIndex = inter + 1
+					}
+				}
+			}
+
 		}
 	}
 
@@ -221,6 +231,8 @@ func isMessageType(expr ast.Expr) bool {
 		if ok1 {
 			// log 的方法调用
 			if x1.Name == "log" {
+				return true
+			} else if x1.Name == "fmt" {
 				return true
 			}
 		}
@@ -291,7 +303,8 @@ func PutIfExistMessage(maps map[string]string, value string) string {
 			return k
 		}
 	}
-	key := fmt.Sprintf("scan%d", len(maps))
+	key := fmt.Sprintf("scan%d", messageIndex)
+	messageIndex += 1
 	maps[key] = unquoteValue
 	return key
 }

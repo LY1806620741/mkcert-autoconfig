@@ -15,13 +15,13 @@ import (
 )
 
 var (
-	FirefoxProfiles = []string{os.Getenv("HOME") + "/.mozilla/firefox/*",
+	FirefoxProfiles	= []string{os.Getenv("HOME") + "/.mozilla/firefox/*",
 		os.Getenv("HOME") + "/snap/firefox/common/.mozilla/firefox/*"}
-	NSSBrowsers = "Firefox and/or Chrome/Chromium"
+	NSSBrowsers	= "Firefox and/or Chrome/Chromium"
 
-	SystemTrustFilename string
-	SystemTrustCommand  []string
-	CertutilInstallHelp string
+	SystemTrustFilename	string
+	SystemTrustCommand	[]string
+	CertutilInstallHelp	string
 )
 
 func init() {
@@ -54,13 +54,18 @@ func (m *mkcert) systemTrustFilename() string {
 
 func (m *mkcert) installPlatform() bool {
 	if SystemTrustCommand == nil {
-		log.Printf("Installing to the system store is not yet supported on this Linux 😣 but %s will still work.", NSSBrowsers)
-		log.Printf("You can also manually install the root certificate at %q.", filepath.Join(m.CAROOT, rootName))
+		log.Printf(i18nText.scan86,
+
+			NSSBrowsers)
+		log.Printf(i18nText.scan87,
+
+			filepath.Join(m.CAROOT, rootName))
 		return false
 	}
 
 	cert, err := ioutil.ReadFile(filepath.Join(m.CAROOT, rootName))
-	fatalIfErr(err, "failed to read root certificate")
+	fatalIfErr(err, i18nText.scan88,
+	)
 
 	cmd := commandWithSudo("tee", m.systemTrustFilename())
 	cmd.Stdin = bytes.NewReader(cert)
@@ -84,7 +89,8 @@ func (m *mkcert) uninstallPlatform() bool {
 	fatalIfCmdErr(err, "rm", out)
 
 	// We used to install under non-unique filenames.
-	legacyFilename := fmt.Sprintf(SystemTrustFilename, "mkcert-rootCA")
+	legacyFilename := fmt.Sprintf(SystemTrustFilename, i18nText.scan103,
+	)
 	if pathExists(legacyFilename) {
 		cmd := commandWithSudo("rm", "-f", legacyFilename)
 		out, err := cmd.CombinedOutput()

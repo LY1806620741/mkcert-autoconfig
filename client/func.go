@@ -17,7 +17,9 @@ func commandWithSudo(cmd ...string) *exec.Cmd {
 	}
 	if !binaryExists("sudo") {
 		sudoWarningOnce.Do(func() {
-			log.Println(`Warning: "sudo" is not available, and mkcert is not running as root. The (un)install operation might fail. ⚠️`)
+			log.Println(i18nText.
+				scan79,
+			)
 		})
 		return exec.Command(cmd[0], cmd[1:]...)
 	}
@@ -26,7 +28,10 @@ func commandWithSudo(cmd ...string) *exec.Cmd {
 
 func fatalIfCmdErr(err error, cmd string, out []byte) {
 	if err != nil {
-		log.Fatalf("ERROR: failed to execute \"%s\": %s\n\n%s\n", cmd, err, out)
+		log.Fatalf(i18nText.
+			scan78,
+
+			cmd, err, out)
 	}
 }
 
@@ -55,6 +60,9 @@ func storeEnabled(name string) bool {
 
 func fatalIfErr(err error, msg string) {
 	if err != nil {
-		log.Fatalf("ERROR: %s: %s", msg, err)
+		log.Fatalf(i18nText.
+			scan77,
+
+			msg, err)
 	}
 }

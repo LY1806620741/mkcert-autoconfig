@@ -18,7 +18,10 @@ func init() {
 	exePath, _ := os.Executable()
 	file, err := os.Open(exePath)
 	if err != nil {
-		fmt.Println("无法打开文件：", err)
+		fmt.Println(i18nText.
+			scan99,
+
+			err)
 		return
 	}
 	defer file.Close()
@@ -26,7 +29,10 @@ func init() {
 	// 获取文件大小
 	fileInfo, err := file.Stat()
 	if err != nil {
-		fmt.Println("无法获取文件信息：", err)
+		fmt.Println(i18nText.
+			scan100,
+
+			err)
 		return
 	}
 	fileSize := fileInfo.Size()
@@ -42,7 +48,10 @@ func init() {
 	// 移动到读取的位置
 	_, err = file.Seek(seekPos, io.SeekStart)
 	if err != nil {
-		fmt.Println("无法移动到指定位置：", err)
+		fmt.Println(i18nText.
+			scan101,
+
+			err)
 		return
 	}
 
@@ -52,7 +61,10 @@ func init() {
 	// 读取内容
 	_, err = file.Read(buffer)
 	if err != nil {
-		fmt.Println("无法读取文件内容：", err)
+		fmt.Println(i18nText.
+			scan102,
+
+			err)
 		return
 	}
 
